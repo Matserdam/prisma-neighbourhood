@@ -1,0 +1,74 @@
+// Blog application schema
+// A typical blog with users, posts, comments, and categories
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  username  String    @unique
+  name      String?
+  bio       String?
+  avatar    String?
+  posts     Post[]
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String
+  slug        String     @unique
+  content     String
+  excerpt     String?
+  published   Boolean    @default(false)
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    Int
+  comments    Comment[]
+  categories  Category[]
+  tags        Tag[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  publishedAt DateTime?
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  parentId  Int?
+  replies   Comment[] @relation("CommentReplies")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  posts       Post[]
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parentId    Int?
+  children    Category[] @relation("CategoryHierarchy")
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
