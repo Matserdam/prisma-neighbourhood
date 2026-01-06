@@ -1,0 +1,1 @@
+CLI tool: Prisma ERD from a start model with depth N; outputs Mermaid + renders PNG/PDF too.
