@@ -79,3 +79,29 @@ jobs:
             echo "No lint script found, skipping"
           fi
 
+      - name: Generate ERD diagrams
+        run: |
+          mkdir -p ci-output
+          
+          # Blog schema - User neighborhood
+          ./dist/cli.js -s examples/blog.prisma -m User -d 2 -o ci-output/blog-user.mmd
+          
+          # Blog schema - Post neighborhood
+          ./dist/cli.js -s examples/blog.prisma -m Post -d 2 -o ci-output/blog-post.mmd
+          
+          # E-commerce schema - Order neighborhood
+          ./dist/cli.js -s examples/ecommerce.prisma -m Order -d 2 -o ci-output/ecommerce-order.mmd
+          
+          # SaaS schema - User neighborhood
+          ./dist/cli.js -s examples/saas.prisma -m User -d 2 -o ci-output/saas-user.mmd
+          
+          echo "Generated ERD diagrams:"
+          ls -la ci-output/
+
+      - name: Upload ERD artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: erd-diagrams
+          path: sources/prisma-neighbourhood/ci-output/
+          retention-days: 7
+
