@@ -91,7 +91,6 @@ erDiagram
 ## Documentation
 
 - [LLM Documentation](docs/llm/prisma-neighbourhood.md) — Detailed usage guide
-- [CI/CD & Release](docs/ci-and-release.md) — Workflows and publishing
 
 ## Development
 

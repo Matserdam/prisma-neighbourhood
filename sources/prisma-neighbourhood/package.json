@@ -1,6 +1,6 @@
 {
-  "name": "prisma-neighborhood",
-  "version": "0.1.0",
+  "name": "@matserdam/prisma-neighborhood",
+  "version": "0.0.1",
   "description": "CLI tool that generates ERD diagrams from Prisma schemas with configurable depth traversal",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -54,7 +54,7 @@
   "author": "",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/Matserdam/prisma-neighbourhood.git"
   },
   "license": "MIT",
   "engines": {
