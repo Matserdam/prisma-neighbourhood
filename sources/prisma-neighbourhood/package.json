@@ -1,6 +1,6 @@
 {
   "name": "@matserdam/prisma-neighborhood",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI tool that generates ERD diagrams from Prisma schemas with configurable depth traversal",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
