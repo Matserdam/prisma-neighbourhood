@@ -8,7 +8,7 @@ import type { TraversedModel } from "../traversal/types";
 /**
  * Supported export formats for diagram rendering.
  */
-export type ExportFormat = "png" | "pdf";
+export type ExportFormat = "png" | "pdf" | "svg";
 
 /**
  * Interface for diagram renderers.
@@ -53,12 +53,12 @@ export interface DiagramRenderer {
 	render(models: readonly TraversedModel[]): string;
 
 	/**
-	 * Export the diagram to a file format (PNG/PDF) if supported.
+	 * Export the diagram to a file format (SVG/PNG/PDF) if supported.
 	 * This method is optional - not all renderers support export.
 	 *
 	 * @param content - The rendered diagram content
 	 * @param outputPath - Path to write the output file
-	 * @param format - The export format (png or pdf)
+	 * @param format - The export format (svg, png or pdf)
 	 * @throws Error if export is not supported or fails
 	 */
 	export?(

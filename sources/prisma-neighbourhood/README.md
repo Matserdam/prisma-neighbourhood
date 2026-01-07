@@ -26,6 +26,9 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.mmd
 # Export to PNG
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.png
 
+# Export to SVG (recommended for very large diagrams)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.svg
+
 # Export to PDF
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.pdf
 
@@ -49,7 +52,7 @@ prisma-hood -s ./prisma/schema.prisma -m User
 | `--schema <path>` | `-s` | Path to the Prisma schema file | required |
 | `--model <name>` | `-m` | Model to start traversal from | required |
 | `--depth <n>` | `-d` | Relationship levels to traverse | `3` |
-| `--renderer <name>` | `-r` | Renderer to use | `mermaid` |
+| `--renderer <name>` | `-r` | Renderer to use | `vector` |
 | `--output <file>` | `-o` | Write to a file instead of stdout | stdout |
 | `--list-renderers` |  | Show available renderers |  |
 | `--help` | `-h` | Show help |  |
@@ -62,28 +65,10 @@ The output format is determined by the file extension:
 | Extension | Output |
 |-----------|--------|
 | `.mmd` / `.md` | Mermaid ERD text |
+| `.svg` | SVG |
 | `.png` | PNG image |
 | `.pdf` | PDF |
 
-## PNG/PDF on Linux
+## No Puppeteer / Chromium
 
-PNG/PDF export uses headless Chromium. On Debian/Ubuntu, install:
-
-```bash
-sudo apt-get install -y \
-  libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
-  libdrm2 \
-  libxkbcommon0 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  libgbm1 \
-  libasound2 \
-  libpangocairo-1.0-0 \
-  libgtk-3-0
-```
-
-If that’s a hassle, output `.mmd` and render it elsewhere (e.g. VS Code Mermaid preview).
+SVG/PNG/PDF export is implemented without headless Chromium, so you no longer need to install OS-level Chromium dependencies.

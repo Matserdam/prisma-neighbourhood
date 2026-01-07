@@ -19,6 +19,9 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
 # Show only direct relationships (depth 1)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
 
+# Export as SVG (recommended for very large diagrams)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/erd.svg
+
 # Export as PNG for documentation
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/erd.png
 
@@ -29,8 +32,8 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/er
 | --schema <path> | -s | Path to Prisma schema file | required |
 | --model <name> | -m | Model to start traversal from | required |
 | --depth <n> | -d | Number of relationship levels to traverse | 3 |
-| --output <file> | -o | Output file (.mmd, .md, .png, .pdf) | stdout |
-| --renderer <name> | -r | Diagram renderer to use | mermaid |
+| --output <file> | -o | Output file (.mmd, .md, .svg, .png, .pdf) | stdout |
+| --renderer <name> | -r | Diagram renderer to use | vector |
 | --list-renderers | | Show available renderers | |
 | --help | -h | Show help | |
 | --version | -V | Show version | |
@@ -41,6 +44,7 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/er
 |-----------|--------|----------|
 | .mmd | Mermaid syntax | Embed in markdown, preview in VS Code, use mermaid.live |
 | .md | Mermaid syntax | Same as .mmd |
+| .svg | SVG | Best for large schemas, infinite zoom |
 | .png | PNG image | README badges, Confluence, presentations, Slack |
 | .pdf | PDF document | Print, formal architecture documentation |
 
@@ -132,18 +136,8 @@ Use depth=4+ for exploring complex interconnections.
 
 ## Troubleshooting
 
-### PNG/PDF export fails on Linux
-PNG and PDF export requires Chromium. Install dependencies:
-
-# Debian/Ubuntu
-sudo apt-get install libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-  libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 \
-  libasound2 libpangocairo-1.0-0 libgtk-3-0
-
-# Alpine
-apk add chromium
-
-Alternative: Output to .mmd and use mermaid.live or VS Code preview.
+### Export without Puppeteer / Chromium
+SVG/PNG/PDF export does not require headless Chromium anymore.
 
 ### Model not found error
 Model names are case-sensitive. Check exact spelling in your schema.prisma:

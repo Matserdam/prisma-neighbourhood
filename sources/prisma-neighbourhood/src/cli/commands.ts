@@ -13,7 +13,7 @@ import { traverseModels } from "../traversal";
 import { DEFAULT_CLI_OPTIONS } from "./types";
 
 /** Supported output file extensions */
-const SUPPORTED_EXTENSIONS = [".mmd", ".md", ".png", ".pdf"] as const;
+const SUPPORTED_EXTENSIONS = [".mmd", ".md", ".png", ".pdf", ".svg"] as const;
 
 /**
  * Gets the output format from a file extension.
@@ -24,6 +24,7 @@ const SUPPORTED_EXTENSIONS = [".mmd", ".md", ".png", ".pdf"] as const;
 function getFormatFromExtension(ext: string): ExportFormat | undefined {
 	if (ext === ".png") return "png";
 	if (ext === ".pdf") return "pdf";
+	if (ext === ".svg") return "svg";
 	return undefined;
 }
 
@@ -65,7 +66,7 @@ export function createProgram(): Command {
 		)
 		.option(
 			"-o, --output <file>",
-			"Output file: .mmd, .md (text), .png, .pdf (image)",
+			"Output file: .mmd, .md (text), .svg, .png, .pdf (export)",
 		)
 		.option("--list-renderers", "Show available renderers")
 		.action(runCommand);

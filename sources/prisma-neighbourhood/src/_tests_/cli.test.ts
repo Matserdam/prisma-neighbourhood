@@ -249,13 +249,14 @@ describe("CLI", () => {
 	});
 
 	describe("Renderer Registry Integration", () => {
-		it("should have mermaid as the default renderer", () => {
+		it("should have vector as the default renderer", () => {
 			expect(rendererRegistry.getDefault()).toBeDefined();
-			expect(rendererRegistry.getDefaultName()).toBe("mermaid");
+			expect(rendererRegistry.getDefaultName()).toBe("vector");
 		});
 
-		it("should list mermaid in available renderers", () => {
+		it("should list vector and mermaid in available renderers", () => {
 			const names = rendererRegistry.listNames();
+			expect(names).toContain("vector");
 			expect(names).toContain("mermaid");
 		});
 	});

@@ -6,7 +6,7 @@
 import type { DiagramRenderer, RendererRegistration } from "./types";
 
 /** The default renderer name */
-const DEFAULT_RENDERER_NAME = "mermaid";
+const DEFAULT_RENDERER_NAME = "vector";
 
 /**
  * Registry for managing diagram renderers.

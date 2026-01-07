@@ -10,6 +10,7 @@ import type { ParsedSchema } from "../parser/types";
 import { MermaidRenderer } from "../renderer/mermaid-renderer";
 import { RendererRegistry, rendererRegistry } from "../renderer/registry";
 import type { DiagramRenderer } from "../renderer/types";
+import { VectorRenderer } from "../renderer/vector-renderer";
 import { traverseModels } from "../traversal/model-traverser";
 import type { TraversedModel } from "../traversal/types";
 
@@ -134,8 +135,8 @@ describe("Renderer System", () => {
 			expect(registry.get("nonexistent")).toBeUndefined();
 		});
 
-		it("should default to 'mermaid' as default renderer name", () => {
-			expect(registry.getDefaultName()).toBe("mermaid");
+		it("should default to 'vector' as default renderer name", () => {
+			expect(registry.getDefaultName()).toBe("vector");
 		});
 	});
 
@@ -152,7 +153,7 @@ describe("Renderer System", () => {
 		});
 
 		it("should support export", () => {
-			expect(renderer.supportsExport()).toBe(true);
+			expect(renderer.supportsExport()).toBe(false);
 		});
 
 		it("should render empty models as minimal ERD", () => {
@@ -241,6 +242,28 @@ describe("Renderer System", () => {
 			expect(output).toMatch(/\w+\s*\{/);
 			// Fields should be formatted as: type name
 			expect(output).toMatch(/\s+\w+\s+\w+/);
+		});
+	});
+
+	describe("VectorRenderer", () => {
+		let renderer: VectorRenderer;
+
+		beforeEach(() => {
+			renderer = new VectorRenderer();
+		});
+
+		it("should have correct name and description", () => {
+			expect(renderer.name).toBe("vector");
+			expect(renderer.description).toContain("Vector");
+		});
+
+		it("should support export", () => {
+			expect(renderer.supportsExport()).toBe(true);
+		});
+
+		it("should render Mermaid ERD text", () => {
+			const output = renderer.render(traversedModels);
+			expect(output).toMatch(/^erDiagram/m);
 		});
 	});
 

@@ -23,7 +23,7 @@ export type ParseResult =
  *   -s, --schema <path>    Path to the Prisma schema file
  *   -m, --model <name>     Name of the model to start traversal from
  *   -d, --depth <n>        Traversal depth (default: 3)
- *   -r, --renderer <name>  Diagram renderer (default: "mermaid")
+ *   -r, --renderer <name>  Diagram renderer (default: "vector")
  *   -o, --output <file>    Output file: .mmd, .md (text), .png, .pdf (image)
  *   --list-renderers       Show available renderers
  *

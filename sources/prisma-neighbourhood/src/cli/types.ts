@@ -15,7 +15,7 @@ export interface CliOptions {
 	/** Maximum traversal depth (default: 3) */
 	readonly depth: number;
 
-	/** Renderer to use (default: "mermaid") */
+	/** Renderer to use (default: "vector") */
 	readonly renderer: string;
 
 	/** Output file path (stdout if not specified). Extension determines format: .mmd/.md (text), .png/.pdf (image) */
@@ -34,6 +34,6 @@ export const DEFAULT_CLI_OPTIONS: {
 	listRenderers: boolean;
 } = {
 	depth: 3,
-	renderer: "mermaid",
+	renderer: "vector",
 	listRenderers: false,
 };

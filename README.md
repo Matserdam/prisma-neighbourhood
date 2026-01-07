@@ -8,13 +8,16 @@ Generate focused ERD diagrams from Prisma schemas by traversing relationships fr
 
 ## Why?
 
-Large Prisma schemas with 50+ models produce overwhelming ERDs. `prisma-neighbourhood` lets you visualize just the "neighborhood" around a specific model — perfect for onboarding, impact analysis, and architecture documentation.
+Large Prisma schemas with `>10` models produce overwhelming ERDs. `prisma-neighbourhood` lets you visualize just the "neighborhood" around a specific model — perfect for onboarding, impact analysis, and architecture documentation.
 
 ## Quick Start
 
 ```bash
 # Visualize relationships around User model
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
+
+# Export as SVG (recommended for very large diagrams)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.svg
 
 # Export as PNG
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.png
@@ -40,14 +43,15 @@ npm install -g @matserdam/prisma-neighborhood
 | `--schema <path>` | `-s` | Path to Prisma schema file | required |
 | `--model <name>` | `-m` | Model to start traversal from | required |
 | `--depth <n>` | `-d` | Relationship levels to traverse | 3 |
-| `--output <file>` | `-o` | Output file (.mmd, .md, .png, .pdf) | stdout |
-| `--renderer <name>` | `-r` | Diagram renderer | mermaid |
+| `--output <file>` | `-o` | Output file (.mmd, .md, .svg, .png, .pdf) | stdout |
+| `--renderer <name>` | `-r` | Diagram renderer | vector |
 
 ## Output Formats
 
 | Extension | Format | Use Case |
 |-----------|--------|----------|
 | `.mmd` | Mermaid syntax | Embed in markdown, VS Code preview |
+| `.svg` | SVG | Best for large schemas, infinite zoom |
 | `.png` | PNG image | README, Confluence, presentations |
 | `.pdf` | PDF document | Print, formal documentation |
 
