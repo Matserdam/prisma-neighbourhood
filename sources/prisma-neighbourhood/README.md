@@ -1,80 +1,75 @@
-# prisma-subgraph-cli
+# prisma-neighbourhood
 
-CLI tool that generates Entity-Relationship Diagrams from Prisma schemas, starting from a specified model and traversing relationships to a configurable depth.
+Generate focused ERD diagrams from a Prisma schema by starting from one model and traversing relationships up to a configurable depth.
 
-## Installation
+The npm package is **`@matserdam/prisma-neighborhood`** and it exposes two CLI commands:
+
+- **`prisma-hood`** (short alias)
+- **`prisma-neighborhood`** (full name)
+
+## Run with Bun (recommended)
 
 ```bash
-bun install
+# Mermaid ERD to stdout
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
 ```
 
-## Usage
+## Common examples
 
 ```bash
-# Basic usage - generate ERD starting from User model (stdout)
-bun src/index.ts -s ./prisma/schema.prisma -m User
+# Limit to direct relationships only (depth 1)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
 
-# With custom depth (default is 3)
-bun src/index.ts -s ./prisma/schema.prisma -m User -d 5
-
-# Output to Mermaid file
-bun src/index.ts -s ./prisma/schema.prisma -m User -o diagram.mmd
+# Write Mermaid to a file (use .mmd or .md)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.mmd
 
 # Export to PNG
-bun src/index.ts -s ./prisma/schema.prisma -m User -o diagram.png
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.png
 
 # Export to PDF
-bun src/index.ts -s ./prisma/schema.prisma -m User -o diagram.pdf
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.pdf
 
-# List available renderers
-bun src/index.ts --list-renderers
-
-# Show help
-bun src/index.ts --help
+# List renderers (and see which ones support PNG/PDF export)
+bunx @matserdam/prisma-neighborhood --list-renderers
 ```
 
-## Options
+## Install globally (optional)
+
+```bash
+npm install -g @matserdam/prisma-neighborhood
+
+# Then you can run:
+prisma-hood -s ./prisma/schema.prisma -m User
+```
+
+## CLI options
 
 | Option | Alias | Description | Default |
 |--------|-------|-------------|---------|
-| `--schema <path>` | `-s` | Path to the Prisma schema file | (required) |
-| `--model <name>` | `-m` | Name of the model to start traversal from | (required) |
-| `--depth <n>` | `-d` | Traversal depth | 3 |
-| `--renderer <name>` | `-r` | Diagram renderer | mermaid |
-| `--output <file>` | `-o` | Output file (stdout if omitted) | - |
-| `--list-renderers` | - | Show available renderers | - |
-| `--help` | `-h` | Display help | - |
-| `--version` | `-V` | Output version | - |
+| `--schema <path>` | `-s` | Path to the Prisma schema file | required |
+| `--model <name>` | `-m` | Model to start traversal from | required |
+| `--depth <n>` | `-d` | Relationship levels to traverse | `3` |
+| `--renderer <name>` | `-r` | Renderer to use | `mermaid` |
+| `--output <file>` | `-o` | Write to a file instead of stdout | stdout |
+| `--list-renderers` |  | Show available renderers |  |
+| `--help` | `-h` | Show help |  |
+| `--version` | `-V` | Show version |  |
 
-### Output Formats
+## Output formats
 
 The output format is determined by the file extension:
 
-| Extension | Format |
+| Extension | Output |
 |-----------|--------|
-| `.mmd` | Mermaid text |
-| `.md` | Mermaid text |
+| `.mmd` / `.md` | Mermaid ERD text |
 | `.png` | PNG image |
-| `.pdf` | PDF document |
+| `.pdf` | PDF |
 
-### PNG/PDF Export Requirements
+## PNG/PDF on Linux
 
-PNG and PDF export uses `@mermaid-js/mermaid-cli` which relies on Puppeteer (headless Chromium).
-
-#### Platform Compatibility
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| macOS | Works out of the box | No additional setup needed |
-| Windows | Works out of the box | No additional setup needed |
-| Linux | Requires dependencies | See below |
-
-#### Linux Dependencies
-
-On Linux, Puppeteer requires additional system libraries:
+PNG/PDF export uses headless Chromium. On Debian/Ubuntu, install:
 
 ```bash
-# Debian/Ubuntu
 sudo apt-get install -y \
   libnss3 \
   libatk1.0-0 \
@@ -89,53 +84,6 @@ sudo apt-get install -y \
   libasound2 \
   libpangocairo-1.0-0 \
   libgtk-3-0
-
-# Alpine (Docker)
-apk add chromium
 ```
 
-#### CI/CD Environments
-
-For CI pipelines, either:
-- Install the dependencies listed above
-- Use a Docker image with Chromium pre-installed (e.g., `node:18-bullseye`)
-
-#### Alternative: Text-only Mode
-
-If PNG/PDF export is problematic, you can:
-1. Output to `.mmd` file and use an online renderer like [mermaid.live](https://mermaid.live)
-2. Use VS Code with a Mermaid preview extension
-3. Embed the Mermaid syntax directly in Markdown documentation
-
-## Example Output
-
-Given a Prisma schema with User, Post, and Profile models:
-
-```mermaid
-erDiagram
-  User {
-    Int id PK
-    String email UK
-    String name
-    DateTime createdAt
-  }
-  Post {
-    Int id PK
-    String title
-    String content
-    Boolean published
-    Int authorId
-    DateTime createdAt
-  }
-  Profile {
-    Int id PK
-    String bio
-    Int userId UK
-  }
-  User ||--o{ Post : "posts"
-  User ||--|| Profile : "profile"
-```
-
-## License
-
-MIT
+If that’s a hassle, output `.mmd` and render it elsewhere (e.g. VS Code Mermaid preview).

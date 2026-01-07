@@ -14,22 +14,20 @@ Large Prisma schemas with 50+ models produce overwhelming ERDs. `prisma-neighbou
 
 ```bash
 # Visualize relationships around User model
-npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
 
 # Export as PNG
-npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -o erd.png
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.png
 
 # Limit to direct relationships only
-npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -d 1
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
 ```
 
 ## Installation
 
 ```bash
 # Run without installing (recommended)
-npx -y @matserdam/prisma-neighborhood [options]
-npx -y --package @matserdam/prisma-neighborhood prisma-hood [options]        # short alias
-bunx --package @matserdam/prisma-neighborhood prisma-hood [options]       # for Bun users
+bunx @matserdam/prisma-neighborhood [options]
 
 # Or install globally
 npm install -g @matserdam/prisma-neighborhood
@@ -87,19 +85,6 @@ erDiagram
 **Microservice Decomposition** — Identify which models cluster together
 
 **Documentation** — Keep ERDs in sync with your actual schema
-
-## Documentation
-
-- [LLM Documentation](docs/llm/prisma-neighbourhood.md) — Detailed usage guide
-
-## Development
-
-```bash
-cd sources/prisma-neighbourhood
-bun install
-bun run build
-bun run test
-```
 
 ## License
 
