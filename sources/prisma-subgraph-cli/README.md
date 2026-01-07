@@ -57,6 +57,56 @@ The output format is determined by the file extension:
 | `.png` | PNG image |
 | `.pdf` | PDF document |
 
+### PNG/PDF Export Requirements
+
+PNG and PDF export uses `@mermaid-js/mermaid-cli` which relies on Puppeteer (headless Chromium).
+
+#### Platform Compatibility
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS | Works out of the box | No additional setup needed |
+| Windows | Works out of the box | No additional setup needed |
+| Linux | Requires dependencies | See below |
+
+#### Linux Dependencies
+
+On Linux, Puppeteer requires additional system libraries:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install -y \
+  libnss3 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdrm2 \
+  libxkbcommon0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxrandr2 \
+  libgbm1 \
+  libasound2 \
+  libpangocairo-1.0-0 \
+  libgtk-3-0
+
+# Alpine (Docker)
+apk add chromium
+```
+
+#### CI/CD Environments
+
+For CI pipelines, either:
+- Install the dependencies listed above
+- Use a Docker image with Chromium pre-installed (e.g., `node:18-bullseye`)
+
+#### Alternative: Text-only Mode
+
+If PNG/PDF export is problematic, you can:
+1. Output to `.mmd` file and use an online renderer like [mermaid.live](https://mermaid.live)
+2. Use VS Code with a Mermaid preview extension
+3. Embed the Mermaid syntax directly in Markdown documentation
+
 ## Example Output
 
 Given a Prisma schema with User, Post, and Profile models:
