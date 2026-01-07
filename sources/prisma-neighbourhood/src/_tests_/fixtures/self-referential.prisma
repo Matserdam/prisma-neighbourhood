@@ -1,0 +1,25 @@
+// Prisma schema with self-referential relations for testing cycle handling
+datasource db2 {
+  provider = "postgresql"
+}
+
+generator client2 {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+model Employee {
+  id         Int        @id @default(autoincrement())
+  name       String
+  manager    Employee?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  managerId  Int?
+  subordinates Employee[] @relation("ManagerSubordinates")
+}
+
+model Category {
+  id       Int        @id @default(autoincrement())
+  name     String
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parentId Int?
+  children Category[] @relation("CategoryHierarchy")
+}

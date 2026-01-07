@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: sources/prisma-neighbourhood
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Detect package manager and install dependencies
+        id: install
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            npm install -g pnpm
+            pnpm install --frozen-lockfile
+          elif [ -f "bun.lockb" ]; then
+            echo "manager=bun" >> $GITHUB_OUTPUT
+            bun install --frozen-lockfile
+          else
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            npm ci
+          fi
+
+      - name: Build
+        run: |
+          if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
+            pnpm run build
+          elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
+            bun run build
+          else
+            npm run build
+          fi
+
+      - name: Run tests
+        run: |
+          if grep -q '"test"' package.json; then
+            if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
+              pnpm run test
+            elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
+              bun run test
+            else
+              npm run test
+            fi
+          else
+            echo "No test script found, skipping"
+          fi
+
+      - name: Run lint
+        run: |
+          if grep -q '"lint"' package.json; then
+            if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
+              pnpm run lint
+            elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
+              bun run lint
+            else
+              npm run lint
+            fi
+          else
+            echo "No lint script found, skipping"
+          fi
+
