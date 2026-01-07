@@ -175,7 +175,7 @@ export class MermaidRenderer implements DiagramRenderer {
 	}
 
 	/**
-	 * Run mermaid-cli to convert the diagram to an image.
+	 * Run mermaid-cli via bunx to convert the diagram to an image.
 	 *
 	 * @param inputPath - Path to the input .mmd file
 	 * @param outputPath - Path to write the output file
@@ -187,10 +187,9 @@ export class MermaidRenderer implements DiagramRenderer {
 		format: ExportFormat,
 	): Promise<void> {
 		return new Promise((resolve, reject) => {
-			// Use npx to run mermaid-cli
+			// Use bunx to run mermaid-cli package
 			const args = [
-				"-y",
-				"mmdc",
+				"@mermaid-js/mermaid-cli",
 				"-i",
 				inputPath,
 				"-o",
@@ -198,7 +197,7 @@ export class MermaidRenderer implements DiagramRenderer {
 				"-e",
 				format,
 			];
-			const process = spawn("npx", args, {
+			const process = spawn("bunx", args, {
 				stdio: ["ignore", "pipe", "pipe"],
 			});
 
@@ -221,7 +220,7 @@ export class MermaidRenderer implements DiagramRenderer {
 			});
 
 			process.on("error", (err) => {
-				reject(new Error(`Failed to run mermaid-cli: ${err.message}`));
+				reject(new Error(`Failed to run mermaid-cli via bunx: ${err.message}`));
 			});
 		});
 	}
