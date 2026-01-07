@@ -7,28 +7,28 @@ Generate focused ERD diagrams from Prisma schemas by traversing relationships fr
 ### Run without installing (recommended)
 
 ```bash
-npx prisma-neighbourhood [options]
-npx prisma-hood [options]
-bunx prisma-hood [options]
+npx -y @matserdam/prisma-neighborhood [options]
+npx -y --package @matserdam/prisma-neighborhood prisma-hood [options]
+bunx --package @matserdam/prisma-neighborhood prisma-hood [options]
 ```
 
 ### Install globally
 
 ```bash
-npm install -g prisma-neighbourhood
+npm install -g @matserdam/prisma-neighborhood
 ```
 
 ## Quick Start
 
 ```bash
 # Visualize the neighborhood around User model
-npx prisma-hood -s ./prisma/schema.prisma -m User
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User
 
 # Show only direct relationships (depth 1)
-npx prisma-hood -s ./prisma/schema.prisma -m User -d 1
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -d 1
 
 # Export as PNG for documentation
-npx prisma-hood -s ./prisma/schema.prisma -m User -o docs/erd.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -o docs/erd.png
 ```
 
 ## CLI Options
@@ -58,7 +58,7 @@ npx prisma-hood -s ./prisma/schema.prisma -m User -o docs/erd.png
 Given a Prisma schema with User, Post, and Profile models, running:
 
 ```bash
-npx prisma-hood -s schema.prisma -m User -d 2
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 2
 ```
 
 Produces Mermaid ERD syntax:
@@ -93,63 +93,63 @@ erDiagram
 
 ```bash
 # Authentication domain only, not the full 200-model schema
-npx prisma-hood -s schema.prisma -m User -d 2 -o docs/auth-domain.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 2 -o docs/auth-domain.png
 
 # Order processing domain for new backend developer
-npx prisma-hood -s schema.prisma -m Order -d 2 -o docs/orders-domain.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 2 -o docs/orders-domain.png
 ```
 
 ### Stakeholder communication: Generate diagrams for non-technical audience
 
 ```bash
-npx prisma-hood -s prisma/schema.prisma -m Product -d 2 -o slides/product-model.png
-npx prisma-hood -s prisma/schema.prisma -m Customer -d 2 -o slides/customer-model.pdf
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m Product -d 2 -o slides/product-model.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m Customer -d 2 -o slides/customer-model.pdf
 ```
 
 ### Impact analysis: See what models are affected by a change
 
 ```bash
 # Before modifying User, see everything within 2 hops
-npx prisma-hood -s schema.prisma -m User -d 2
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 2
 
 # Check impact radius of Invoice changes
-npx prisma-hood -s schema.prisma -m Invoice -d 2 -o impact-analysis.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Invoice -d 2 -o impact-analysis.png
 ```
 
 ### Code review: Visualize models touched by a PR
 
 ```bash
 # PR touches Order, OrderItem, Payment - see how they connect
-npx prisma-hood -s schema.prisma -m Order -d 1 -o pr-context.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 1 -o pr-context.png
 ```
 
 ### Domain-Driven Design: Identify bounded context boundaries
 
 ```bash
 # Visualize neighborhood around each aggregate root
-npx prisma-hood -s schema.prisma -m Order -d 3 -o contexts/order-aggregate.mmd
-npx prisma-hood -s schema.prisma -m User -d 3 -o contexts/user-aggregate.mmd
-npx prisma-hood -s schema.prisma -m Product -d 3 -o contexts/product-aggregate.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 3 -o contexts/order-aggregate.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 3 -o contexts/user-aggregate.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Product -d 3 -o contexts/product-aggregate.mmd
 ```
 
 ### Check coupling: Does adding a relation create unwanted dependencies?
 
 ```bash
 # Before: visualize Order neighborhood
-npx prisma-hood -s schema.prisma -m Order -d 2 -o before.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 2 -o before.mmd
 
 # After adding relation: check if UserPreferences now appears
-npx prisma-hood -s schema.prisma -m Order -d 2 -o after.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 2 -o after.mmd
 ```
 
 ### Microservice decomposition: See what models cluster together
 
 ```bash
 # What belongs in the Order service?
-npx prisma-hood -s schema.prisma -m Order -d 3 -o services/order-service.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Order -d 3 -o services/order-service.png
 
 # What belongs in the User service?
-npx prisma-hood -s schema.prisma -m User -d 3 -o services/user-service.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 3 -o services/user-service.png
 
 # Compare outputs to identify shared models (potential API boundaries)
 ```
@@ -158,21 +158,21 @@ npx prisma-hood -s schema.prisma -m User -d 3 -o services/user-service.png
 
 ```bash
 # What tables cascade from Product?
-npx prisma-hood -s schema.prisma -m Product -d 3
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Product -d 3
 
 # Plan migration order based on relationship graph
-npx prisma-hood -s schema.prisma -m Inventory -d 2 -o migration-scope.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m Inventory -d 2 -o migration-scope.png
 ```
 
 ### Documentation: Keep ERDs in sync with actual schema
 
 ```bash
 # Regenerate focused diagrams from current schema
-npx prisma-hood -s prisma/schema.prisma -m User -o docs/user-erd.png
-npx prisma-hood -s prisma/schema.prisma -m Order -o docs/order-erd.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m User -o docs/user-erd.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m Order -o docs/order-erd.png
 
 # Generate Mermaid for embedding in README
-npx prisma-hood -s prisma/schema.prisma -m Post -o README-diagram.mmd
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m Post -o README-diagram.mmd
 ```
 
 ### CI/CD: Automated documentation generation
@@ -181,8 +181,8 @@ npx prisma-hood -s prisma/schema.prisma -m Post -o README-diagram.mmd
 # In GitHub Actions workflow
 - name: Generate ERD documentation
   run: |
-    npx prisma-hood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.png
-    npx prisma-hood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.png
+    npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.png
+    npx -y --package @matserdam/prisma-neighborhood prisma-hood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.png
 ```
 
 ## Understanding Depth
@@ -251,7 +251,7 @@ Reduce depth to limit scope:
 
 ```bash
 # Too much? Try depth 1 for direct relations only
-npx prisma-hood -s schema.prisma -m User -d 1
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s schema.prisma -m User -d 1
 ```
 
 If still too large, your model may be a "God object" with too many relations — consider refactoring.

@@ -1,6 +1,6 @@
 # CI/CD and Release Process
 
-This document describes the continuous integration, packaging, and release workflows for `prisma-neighborhood`.
+This document describes the continuous integration, packaging, and release workflows for the npm package `@matserdam/prisma-neighborhood`.
 
 ## Project Structure
 
@@ -66,25 +66,21 @@ git push origin v1.0.0
 
 ### What It Does
 
-1. **Checkout** and setup environment
-2. **Install dependencies** and **build**
-3. **npm pack** - creates `.tgz` archive
-4. **Create GitHub Release** with auto-generated notes
-5. **Upload `.tgz`** to the release
-6. **Publish to npm** using `NPM_TOKEN` secret
+The workflow runs the build pipeline and then fans out into two parallel jobs:
 
-### Required Secrets
+1. **`github_release`**:
+   - Creates the npm tarball via `npm pack`
+   - Zips `dist/` and the generated examples output
+   - Creates a GitHub Release and uploads the artifacts
+2. **`npm_publish`**:
+   - Creates the npm tarball via `npm pack`
+   - (Bootstrap phase) does **not** publish to npm yet
 
-| Secret | Description |
-|--------|-------------|
-| `NPM_TOKEN` | npm automation token with publish permissions |
-| `GITHUB_TOKEN` | Automatically provided by GitHub Actions |
+During bootstrap (first publish), npm publishing is intentionally disabled so we can publish `0.0.1` manually, then enable Trusted Publishing for `0.0.2+`.
 
-### Creating an npm Token
+### Publishing Authentication
 
-1. Go to [npmjs.com](https://www.npmjs.com) → Access Tokens
-2. Generate new token → **Automation** type
-3. Add to repository: Settings → Secrets → Actions → `NPM_TOKEN`
+For `0.0.2+`, publishing is expected to use **npm Trusted Publishing (GitHub Actions OIDC)** instead of a long-lived npm token.
 
 ---
 
@@ -128,7 +124,7 @@ Only these are included in the npm package:
 The `prepack` script runs automatically before `npm pack` or `npm publish`:
 
 ```json
-"prepack": "npm run build"
+"prepack": "bun run build"
 ```
 
 ---
@@ -163,7 +159,7 @@ bun run test
 
 ```bash
 npm pack
-# Creates prisma-neighborhood-x.x.x.tgz
+# Creates matserdam-prisma-neighborhood-x.x.x.tgz
 ```
 
 ---
@@ -186,8 +182,8 @@ npm pack
 
 4. The release workflow automatically:
    - Builds the package
-   - Creates a GitHub release with notes
-   - Publishes to npm
+   - Creates a GitHub release with notes + artifacts
+   - (When enabled) publishes to npm via Trusted Publishing
 
 ---
 

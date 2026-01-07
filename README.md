@@ -14,25 +14,25 @@ Large Prisma schemas with 50+ models produce overwhelming ERDs. `prisma-neighbou
 
 ```bash
 # Visualize relationships around User model
-npx prisma-hood -s ./prisma/schema.prisma -m User
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User
 
 # Export as PNG
-npx prisma-hood -s ./prisma/schema.prisma -m User -o erd.png
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -o erd.png
 
 # Limit to direct relationships only
-npx prisma-hood -s ./prisma/schema.prisma -m User -d 1
+npx -y --package @matserdam/prisma-neighborhood prisma-hood -s ./prisma/schema.prisma -m User -d 1
 ```
 
 ## Installation
 
 ```bash
 # Run without installing (recommended)
-npx prisma-neighbourhood [options]
-npx prisma-hood [options]        # short alias
-bunx prisma-hood [options]       # for Bun users
+npx -y @matserdam/prisma-neighborhood [options]
+npx -y --package @matserdam/prisma-neighborhood prisma-hood [options]        # short alias
+bunx --package @matserdam/prisma-neighborhood prisma-hood [options]       # for Bun users
 
 # Or install globally
-npm install -g prisma-neighbourhood
+npm install -g @matserdam/prisma-neighborhood
 ```
 
 ## CLI Options
