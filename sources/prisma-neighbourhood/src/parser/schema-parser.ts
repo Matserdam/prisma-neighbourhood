@@ -3,15 +3,15 @@
  * Parses Prisma schema files and converts them to our internal representation.
  */
 
-import { getDMMF } from "@prisma/internals";
 import { readFile } from "node:fs/promises";
+import { getDMMF } from "@prisma/internals";
 import type {
-  Field,
-  Model,
-  ParserOptions,
-  ParseResult,
-  Relation,
-  RelationType,
+	Field,
+	Model,
+	ParseResult,
+	ParserOptions,
+	Relation,
+	RelationType,
 } from "./types";
 
 /**
@@ -23,27 +23,27 @@ import type {
  * @returns The appropriate RelationType
  */
 function determineRelationType(
-  field: { isList: boolean; isRequired: boolean },
-  relatedField: { isList: boolean; isRequired: boolean } | undefined
+	field: { isList: boolean; isRequired: boolean },
+	relatedField: { isList: boolean; isRequired: boolean } | undefined,
 ): RelationType {
-  // If this field is a list
-  if (field.isList) {
-    // If the related field is also a list, it's many-to-many
-    if (relatedField?.isList) {
-      return "MANY_TO_MANY";
-    }
-    // This side is "many", so from parent's perspective it's one-to-many
-    return "ONE_TO_MANY";
-  }
+	// If this field is a list
+	if (field.isList) {
+		// If the related field is also a list, it's many-to-many
+		if (relatedField?.isList) {
+			return "MANY_TO_MANY";
+		}
+		// This side is "many", so from parent's perspective it's one-to-many
+		return "ONE_TO_MANY";
+	}
 
-  // This field is not a list (single reference)
-  // If the related field is a list, it's the "one" side of one-to-many
-  if (relatedField?.isList) {
-    return "ONE_TO_MANY";
-  }
+	// This field is not a list (single reference)
+	// If the related field is a list, it's the "one" side of one-to-many
+	if (relatedField?.isList) {
+		return "ONE_TO_MANY";
+	}
 
-  // Neither side is a list - it's one-to-one
-  return "ONE_TO_ONE";
+	// Neither side is a list - it's one-to-one
+	return "ONE_TO_ONE";
 }
 
 /**
@@ -53,10 +53,10 @@ function determineRelationType(
  * @returns True if the field is a relation
  */
 function isRelationField(field: {
-  kind: string;
-  relationName?: string | null;
+	kind: string;
+	relationName?: string | null;
 }): boolean {
-  return field.kind === "object" && field.relationName !== undefined;
+	return field.kind === "object" && field.relationName !== undefined;
 }
 
 /**
@@ -66,7 +66,7 @@ function isRelationField(field: {
  * @returns True if the field is a primary key
  */
 function isPrimaryKeyField(field: { isId: boolean }): boolean {
-  return field.isId;
+	return field.isId;
 }
 
 /**
@@ -76,20 +76,7 @@ function isPrimaryKeyField(field: { isId: boolean }): boolean {
  * @returns True if the field is unique
  */
 function isUniqueField(field: { isUnique: boolean }): boolean {
-  return field.isUnique;
-}
-
-/**
- * Prepares schema content for model-only parsing.
- * Removes datasource blocks entirely since getDMMF validates them
- * but we only care about extracting model definitions.
- *
- * @param content - The raw schema content
- * @returns Schema content with datasource blocks removed
- */
-function prepareSchemaForModelParsing(content: string): string {
-  // Remove all datasource blocks - we don't need them for model extraction
-  return content.replace(/datasource\s+\w+\s*\{[^}]*\}/g, "");
+	return field.isUnique;
 }
 
 /**
@@ -109,114 +96,115 @@ function prepareSchemaForModelParsing(content: string): string {
  * }
  * ```
  */
-export async function parseSchema(options: ParserOptions): Promise<ParseResult> {
-  const { schemaPath } = options;
+export async function parseSchema(
+	options: ParserOptions,
+): Promise<ParseResult> {
+	const { schemaPath } = options;
 
-  try {
-    // Step 1: Read the schema file content
-    let schemaContent: string;
-    try {
-      schemaContent = await readFile(schemaPath, "utf-8");
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to read schema file: ${schemaPath}`,
-      };
-    }
+	try {
+		// Step 1: Read the schema file content
+		let schemaContent: string;
+		try {
+			schemaContent = await readFile(schemaPath, "utf-8");
+		} catch {
+			return {
+				success: false,
+				error: `Failed to read schema file: ${schemaPath}`,
+			};
+		}
 
-    // Step 2: Remove datasource blocks (we only need models)
-    const modelsOnlyContent = prepareSchemaForModelParsing(schemaContent);
+		// Step 2: Parse the schema using Prisma's DMMF generator
+		const dmmf = await getDMMF({ datamodel: schemaContent });
 
-    // Step 3: Parse the schema using Prisma's DMMF generator
-    const dmmf = await getDMMF({ datamodel: modelsOnlyContent });
+		// Step 3: Build a lookup map of all models for relation resolution
+		const dmmfModels = dmmf.datamodel.models;
+		const modelMap = new Map<string, (typeof dmmfModels)[number]>();
+		for (const model of dmmfModels) {
+			modelMap.set(model.name, model);
+		}
 
-    // Step 4: Build a lookup map of all models for relation resolution
-    const dmmfModels = dmmf.datamodel.models;
-    const modelMap = new Map<string, (typeof dmmfModels)[number]>();
-    for (const model of dmmfModels) {
-      modelMap.set(model.name, model);
-    }
+		// Step 4: Convert DMMF models to our internal representation
+		const models = new Map<string, Model>();
 
-    // Step 5: Convert DMMF models to our internal representation
-    const models = new Map<string, Model>();
+		for (const dmmfModel of dmmfModels) {
+			// Parse all fields in the model
+			const fields: Field[] = [];
+			const relations: Relation[] = [];
 
-    for (const dmmfModel of dmmfModels) {
-      // Parse all fields in the model
-      const fields: Field[] = [];
-      const relations: Relation[] = [];
+			for (const dmmfField of dmmfModel.fields) {
+				// Create the field representation
+				const field: Field = {
+					name: dmmfField.name,
+					type: dmmfField.type,
+					isRequired: dmmfField.isRequired,
+					isList: dmmfField.isList,
+					isPrimaryKey: isPrimaryKeyField(dmmfField),
+					isUnique: isUniqueField(dmmfField),
+					isRelation: isRelationField(dmmfField),
+				};
 
-      for (const dmmfField of dmmfModel.fields) {
-        // Create the field representation
-        const field: Field = {
-          name: dmmfField.name,
-          type: dmmfField.type,
-          isRequired: dmmfField.isRequired,
-          isList: dmmfField.isList,
-          isPrimaryKey: isPrimaryKeyField(dmmfField),
-          isUnique: isUniqueField(dmmfField),
-          isRelation: isRelationField(dmmfField),
-        };
+				fields.push(field);
 
-        fields.push(field);
+				// If this is a relation field, also create a Relation entry
+				if (isRelationField(dmmfField)) {
+					// Find the related model to determine relation type
+					const relatedModel = modelMap.get(dmmfField.type);
+					const relatedField = relatedModel?.fields.find(
+						(f) =>
+							f.relationName === dmmfField.relationName &&
+							f.name !== dmmfField.name,
+					);
 
-        // If this is a relation field, also create a Relation entry
-        if (isRelationField(dmmfField)) {
-          // Find the related model to determine relation type
-          const relatedModel = modelMap.get(dmmfField.type);
-          const relatedField = relatedModel?.fields.find(
-            (f) =>
-              f.relationName === dmmfField.relationName &&
-              f.name !== dmmfField.name
-          );
+					// Determine relation type based on both sides
+					const relationType = determineRelationType(
+						{ isList: dmmfField.isList, isRequired: dmmfField.isRequired },
+						relatedField
+							? {
+									isList: relatedField.isList,
+									isRequired: relatedField.isRequired,
+								}
+							: undefined,
+					);
 
-          // Determine relation type based on both sides
-          const relationType = determineRelationType(
-            { isList: dmmfField.isList, isRequired: dmmfField.isRequired },
-            relatedField
-              ? { isList: relatedField.isList, isRequired: relatedField.isRequired }
-              : undefined
-          );
+					// Determine if this side owns the relation (has the foreign key)
+					// The owner is the side that has relationFromFields defined
+					const isOwner =
+						dmmfField.relationFromFields !== undefined &&
+						dmmfField.relationFromFields.length > 0;
 
-          // Determine if this side owns the relation (has the foreign key)
-          // The owner is the side that has relationFromFields defined
-          const isOwner =
-            dmmfField.relationFromFields !== undefined &&
-            dmmfField.relationFromFields.length > 0;
+					const relation: Relation = {
+						relatedModel: dmmfField.type,
+						type: relationType,
+						fieldName: dmmfField.name,
+						isOwner,
+					};
 
-          const relation: Relation = {
-            relatedModel: dmmfField.type,
-            type: relationType,
-            fieldName: dmmfField.name,
-            isOwner,
-          };
+					relations.push(relation);
+				}
+			}
 
-          relations.push(relation);
-        }
-      }
+			// Create the model representation
+			const model: Model = {
+				name: dmmfModel.name,
+				fields,
+				relations,
+			};
 
-      // Create the model representation
-      const model: Model = {
-        name: dmmfModel.name,
-        fields,
-        relations,
-      };
+			models.set(model.name, model);
+		}
 
-      models.set(model.name, model);
-    }
-
-    // Step 6: Return the parsed schema
-    return {
-      success: true,
-      schema: { models },
-    };
-  } catch (error) {
-    // Handle any parsing errors from getDMMF
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    return {
-      success: false,
-      error: `Failed to parse schema: ${errorMessage}`,
-    };
-  }
+		// Step 5: Return the parsed schema
+		return {
+			success: true,
+			schema: { models },
+		};
+	} catch (error) {
+		// Handle any parsing errors from getDMMF
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error occurred";
+		return {
+			success: false,
+			error: `Failed to parse schema: ${errorMessage}`,
+		};
+	}
 }
-

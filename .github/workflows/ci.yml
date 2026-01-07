@@ -11,97 +11,119 @@ defaults:
     working-directory: sources/prisma-neighbourhood
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "20"
+          bun-version: "1.1.43"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.1.43"
 
-      - name: Detect package manager and install dependencies
-        id: install
-        run: |
-          if [ -f "pnpm-lock.yaml" ]; then
-            echo "manager=pnpm" >> $GITHUB_OUTPUT
-            npm install -g pnpm
-            pnpm install --frozen-lockfile
-          elif [ -f "bun.lockb" ]; then
-            echo "manager=bun" >> $GITHUB_OUTPUT
-            bun install --frozen-lockfile
-          else
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            npm ci
-          fi
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - name: Build
-        run: |
-          if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
-            pnpm run build
-          elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
-            bun run build
-          else
-            npm run build
-          fi
+      - name: Test
+        run: bun run test
 
-      - name: Run tests
-        run: |
-          if grep -q '"test"' package.json; then
-            if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
-              pnpm run test
-            elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
-              bun run test
-            else
-              npm run test
-            fi
-          else
-            echo "No test script found, skipping"
-          fi
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Run lint
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.1.43"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate type declarations
+        run: tsc --emitDeclarationOnly
+
+      - name: Build CLI
+        run: bun run build:cli
+
+      - name: Build library
+        run: bun run build:index
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: sources/prisma-neighbourhood/dist/
+          retention-days: 1
+
+  examples:
+    runs-on: ubuntu-22.04
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Chromium dependencies
         run: |
-          if grep -q '"lint"' package.json; then
-            if [ "${{ steps.install.outputs.manager }}" = "pnpm" ]; then
-              pnpm run lint
-            elif [ "${{ steps.install.outputs.manager }}" = "bun" ]; then
-              bun run lint
-            else
-              npm run lint
-            fi
-          else
-            echo "No lint script found, skipping"
-          fi
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2
+        working-directory: .
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.1.43"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: sources/prisma-neighbourhood/dist/
+
+      - name: Make CLI executable
+        run: chmod +x ./dist/cli.js
 
       - name: Generate ERD diagrams
-        run: |
-          mkdir -p ci-output
-          
-          # Blog schema - User neighborhood
-          ./dist/cli.js -s examples/blog.prisma -m User -d 2 -o ci-output/blog-user.mmd
-          
-          # Blog schema - Post neighborhood
-          ./dist/cli.js -s examples/blog.prisma -m Post -d 2 -o ci-output/blog-post.mmd
-          
-          # E-commerce schema - Order neighborhood
-          ./dist/cli.js -s examples/ecommerce.prisma -m Order -d 2 -o ci-output/ecommerce-order.mmd
-          
-          # SaaS schema - User neighborhood
-          ./dist/cli.js -s examples/saas.prisma -m User -d 2 -o ci-output/saas-user.mmd
-          
-          echo "Generated ERD diagrams:"
-          ls -la ci-output/
+        run: bun run generate:examples
 
       - name: Upload ERD artifacts
         uses: actions/upload-artifact@v4
         with:
           name: erd-diagrams
-          path: sources/prisma-neighbourhood/ci-output/
-          retention-days: 7
-
+          path: sources/prisma-neighbourhood/examples/output/
+          retention-days: 1

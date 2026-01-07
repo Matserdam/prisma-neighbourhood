@@ -3,14 +3,12 @@
  * Exports parser, traversal, and renderer modules for programmatic use.
  */
 
+// CLI utilities (for programmatic CLI usage)
+export * from "./cli/index";
 // Parser module exports
 export * from "./parser";
 
-// Traversal module exports
-export * from "./traversal";
-
 // Renderer module exports
 export * from "./renderer";
-
-// CLI utilities (for programmatic CLI usage)
-export * from "./cli/index";
+// Traversal module exports
+export * from "./traversal";

@@ -8,4 +8,3 @@ import { runCli } from "./cli/index";
 
 // Run the CLI with process arguments
 runCli(process.argv);
-
