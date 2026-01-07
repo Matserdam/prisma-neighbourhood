@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "bunx @biomejs/biome check src/",
     "lint:fix": "bunx @biomejs/biome check src/ --write",
-    "prepack": "npm run build",
+    "prepack": "bun run build",
     "generate:examples": "bash scripts/generate-examples.sh"
   },
   "dependencies": {
