@@ -2,6 +2,10 @@
 
 Generate focused ERD diagrams from Prisma schemas by traversing relationships from any model to a configurable depth.
 
+[![CI](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/ci.yml/badge.svg)](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/ci.yml)
+
+[![Release](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/release.yml/badge.svg)](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/release.yml)
+
 ## Why?
 
 Large Prisma schemas with 50+ models produce overwhelming ERDs. `prisma-neighbourhood` lets you visualize just the "neighborhood" around a specific model — perfect for onboarding, impact analysis, and architecture documentation.
