@@ -60,9 +60,20 @@ export async function runMermaidCli(
 		const background = options.backgroundColor ?? "white";
 		const theme = options.theme ?? "default";
 
-		await execAsync(
-			`bunx mmdc -i "${inputPath}" -o "${outputPath}" -c "${configPath}" -C "${cssPath}" -b ${background} -t ${theme}`,
-		);
+		try {
+			await execAsync(
+				`bunx mmdc -i "${inputPath}" -o "${outputPath}" -c "${configPath}" -C "${cssPath}" -b ${background} -t ${theme}`,
+			);
+		} catch (error: unknown) {
+			console.error("Mermaid CLI failed:");
+			if (error instanceof Error && "stdout" in error) {
+				console.error("stdout:", (error as { stdout: string }).stdout);
+			}
+			if (error instanceof Error && "stderr" in error) {
+				console.error("stderr:", (error as { stderr: string }).stderr);
+			}
+			throw error;
+		}
 
 		if (options.outputFormat === "svg") {
 			return await readFile(outputPath, "utf-8");

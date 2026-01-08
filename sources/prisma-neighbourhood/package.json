@@ -21,8 +21,8 @@
   ],
   "scripts": {
     "build": "tsc --emitDeclarationOnly && bun run build:cli && bun run build:index",
-    "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node",
-    "build:index": "bun build src/index.ts --outfile dist/index.js --format cjs --target node",
+    "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node --external @prisma/internals --external sharp --external @mermaid-js/mermaid-cli --external pdfkit",
+    "build:index": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --external @prisma/internals --external sharp --external @mermaid-js/mermaid-cli --external pdfkit",
     "dev": "bun run src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
