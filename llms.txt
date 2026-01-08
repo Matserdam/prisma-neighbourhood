@@ -1,6 +1,14 @@
 # prisma-neighbourhood
 
-Generate focused ERD diagrams from Prisma schemas by traversing relationships from any model to a configurable depth.
+Generate focused, high-quality ERD diagrams from Prisma schemas. Instead of overwhelming full-schema diagrams, prisma-neighbourhood traverses relationships from any starting model to a configurable depth, showing only the relevant "neighborhood" of connected entities.
+
+Perfect for:
+- **Onboarding**: Show new developers just the domain they need, not 200+ models
+- **Impact analysis**: See exactly what's affected before modifying a model
+- **Documentation**: Generate crisp SVG diagrams that stay in sync with your actual schema
+- **Architecture reviews**: Visualize bounded contexts and identify coupling
+
+Outputs to SVG (recommended for highest quality), PNG, PDF, or raw Mermaid syntax.
 
 ## Installation
 
@@ -19,10 +27,10 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
 # Show only direct relationships (depth 1)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
 
-# Export as SVG (recommended for very large diagrams)
+# Export as SVG (highest quality, recommended)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/erd.svg
 
-# Export as PNG for documentation
+# Export as PNG (for platforms that don't support SVG)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/erd.png
 
 ## CLI Options
@@ -42,28 +50,28 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/er
 
 | Extension | Format | Use Case |
 |-----------|--------|----------|
+| .svg | SVG vector (recommended) | Highest quality, infinite zoom, crisp at any size, transparent background |
+| .png | PNG image (300 DPI) | Confluence, Slack, platforms that don't support SVG |
+| .pdf | PDF document | Print, formal architecture documentation |
 | .mmd | Mermaid syntax | Embed in markdown, preview in VS Code, use mermaid.live |
 | .md | Mermaid syntax | Same as .mmd |
-| .svg | SVG vector | Best for large schemas, infinite zoom, transparent background |
-| .png | PNG image (300 DPI) | README badges, Confluence, presentations, Slack |
-| .pdf | PDF document | Print, formal architecture documentation |
 
 ### Export Pipeline
 
 SVG, PNG, and PDF exports use @mermaid-js/mermaid-cli for accurate diagram rendering:
 
-- **SVG**: Generated directly by mermaid-cli with transparent background
-- **PNG**: SVG converted to high-resolution PNG (300 DPI) via sharp with white background
-- **PDF**: High-DPI PNG embedded in PDF document via pdfkit
+- **SVG**: Generated directly by mermaid-cli. Highest quality, perfect for documentation and web.
+- **PNG**: Derived from SVG, converted to 300 DPI via sharp. Use when SVG not supported.
+- **PDF**: High-DPI PNG embedded in PDF document via pdfkit.
 
 ## Examples by Use Case
 
 ### Onboarding: Show a new developer just one domain
 # Authentication domain only, not the full 200-model schema
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 2 -o docs/auth-domain.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 2 -o docs/auth-domain.svg
 
 # Order processing domain for new backend developer
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 2 -o docs/orders-domain.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 2 -o docs/orders-domain.svg
 
 ### Stakeholder communication: Generate diagrams for non-technical audience
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Product -d 2 -o slides/product-model.png
@@ -74,11 +82,11 @@ bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Customer -d 2 -o 
 bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 2
 
 # Check impact radius of Invoice changes
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Invoice -d 2 -o impact-analysis.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m Invoice -d 2 -o impact-analysis.svg
 
 ### Code review: Visualize models touched by a PR
 # PR touches Order, OrderItem, Payment - see how they connect
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 1 -o pr-context.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 1 -o pr-context.svg
 
 ### Domain-Driven Design: Identify bounded context boundaries
 # Visualize neighborhood around each aggregate root
@@ -94,10 +102,10 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 2 -o after.mmd
 
 ### Microservice decomposition: See what models cluster together
 # What belongs in the Order service?
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 3 -o services/order-service.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 3 -o services/order-service.svg
 
 # What belongs in the User service?
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 3 -o services/user-service.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 3 -o services/user-service.svg
 
 # Compare outputs to identify shared models (potential API boundaries)
 
@@ -106,20 +114,20 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 3 -o services/us
 bunx @matserdam/prisma-neighborhood -s schema.prisma -m Product -d 3
 
 # Plan migration order based on relationship graph
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Inventory -d 2 -o migration-scope.png
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m Inventory -d 2 -o migration-scope.svg
 
 ### Documentation: Keep ERDs in sync with actual schema
 # Regenerate focused diagrams from current schema
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -o docs/user-erd.png
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -o docs/order-erd.png
+bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -o docs/user-erd.svg
+bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -o docs/order-erd.svg
 
 # Generate Mermaid for embedding in README
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Post -o README-diagram.mmd
 
 ### CI/CD: Automated documentation generation
 # In GitHub Actions workflow
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.png
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.png
+bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.svg
+bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.svg
 
 ## Understanding Depth
 
