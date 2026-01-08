@@ -37,6 +37,19 @@ describe("VectorRenderer export (e2e)", () => {
 
 		const svg = await readFile(svgPath, "utf-8");
 		expect(svg).toContain("<svg");
+		// Ensure we don't produce a tiny/cropped viewport (which makes outputs look empty).
+		const viewBoxMatch = svg.match(/\bviewBox="([^"]+)"/);
+		expect(viewBoxMatch).not.toBeNull();
+		const viewBoxParts = viewBoxMatch?.[1]
+			.trim()
+			.split(/\s+/)
+			.map((v) => Number.parseFloat(v));
+		expect(viewBoxParts?.length).toBe(4);
+		const viewBoxWidth = viewBoxParts?.[2] ?? 0;
+		const viewBoxHeight = viewBoxParts?.[3] ?? 0;
+		// We mainly want to avoid the "tiny viewBox" bug that makes outputs look empty.
+		expect(viewBoxWidth).toBeGreaterThan(50);
+		expect(viewBoxHeight).toBeGreaterThan(50);
 
 		const png = await readFile(pngPath);
 		// PNG signature bytes: 89 50 4E 47 0D 0A 1A 0A

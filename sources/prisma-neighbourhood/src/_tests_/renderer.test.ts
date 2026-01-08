@@ -153,7 +153,7 @@ describe("Renderer System", () => {
 		});
 
 		it("should support export", () => {
-			expect(renderer.supportsExport()).toBe(false);
+			expect(renderer.supportsExport()).toBe(true);
 		});
 
 		it("should render empty models as minimal ERD", () => {

@@ -44,9 +44,17 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/er
 |-----------|--------|----------|
 | .mmd | Mermaid syntax | Embed in markdown, preview in VS Code, use mermaid.live |
 | .md | Mermaid syntax | Same as .mmd |
-| .svg | SVG | Best for large schemas, infinite zoom |
-| .png | PNG image | README badges, Confluence, presentations, Slack |
+| .svg | SVG vector | Best for large schemas, infinite zoom, transparent background |
+| .png | PNG image (300 DPI) | README badges, Confluence, presentations, Slack |
 | .pdf | PDF document | Print, formal architecture documentation |
+
+### Export Pipeline
+
+SVG, PNG, and PDF exports use @mermaid-js/mermaid-cli for accurate diagram rendering:
+
+- **SVG**: Generated directly by mermaid-cli with transparent background
+- **PNG**: SVG converted to high-resolution PNG (300 DPI) via sharp with white background
+- **PDF**: High-DPI PNG embedded in PDF document via pdfkit
 
 ## Examples by Use Case
 
@@ -136,8 +144,8 @@ Use depth=4+ for exploring complex interconnections.
 
 ## Troubleshooting
 
-### Export without Puppeteer / Chromium
-SVG/PNG/PDF export does not require headless Chromium anymore.
+### Export uses mermaid-cli
+SVG/PNG/PDF export uses @mermaid-js/mermaid-cli which handles Puppeteer/Chromium automatically. No manual browser setup required.
 
 ### Model not found error
 Model names are case-sensitive. Check exact spelling in your schema.prisma:

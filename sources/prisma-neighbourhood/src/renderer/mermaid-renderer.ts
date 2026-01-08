@@ -1,6 +1,7 @@
 import type { TraversedModel } from "../traversal/types";
 import { renderMermaidErd } from "./mermaid-erd";
-import type { DiagramRenderer } from "./types";
+import type { DiagramRenderer, ExportFormat } from "./types";
+import { runMermaidCli } from "./utils/mermaid-cli";
 
 /**
  * Mermaid ERD renderer implementation.
@@ -25,7 +26,7 @@ export class MermaidRenderer implements DiagramRenderer {
 
 	/** Human-readable description */
 	readonly description =
-		"Mermaid ERD syntax (text). For SVG/PNG/PDF export, use the 'vector' renderer.";
+		"Mermaid ERD syntax (text). Supports export via mermaid-cli.";
 
 	/**
 	 * Generate Mermaid ERD syntax from traversed models.
@@ -43,10 +44,22 @@ export class MermaidRenderer implements DiagramRenderer {
 	}
 
 	/**
+	 * Export the diagram to a file format (SVG/PNG/PDF).
+	 * Uses @mermaid-js/mermaid-cli for rendering.
+	 */
+	async export(
+		content: string,
+		outputPath: string,
+		format: ExportFormat,
+	): Promise<void> {
+		await runMermaidCli(content, { outputFormat: format, outputPath });
+	}
+
+	/**
 	 * Whether this renderer supports export functionality.
 	 * @returns True - MermaidRenderer supports PNG/PDF export
 	 */
 	supportsExport(): boolean {
-		return false;
+		return true;
 	}
 }
