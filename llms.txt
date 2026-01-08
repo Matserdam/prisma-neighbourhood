@@ -129,6 +129,40 @@ bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Post -o README-di
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.svg
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.svg
 
+### Automation: Auto-regenerate on schema changes
+
+#### macOS (using fswatch)
+Watch for changes and regenerate diagram automatically:
+```bash
+fswatch -o prisma/schema.prisma | xargs -n1 -I{} bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m AnalyticsEvent -d 1 -o docs/analytics.svg
+```
+
+#### Linux (using inotifywait)
+Watch for file modification events:
+```bash
+while inotifywait -e modify prisma/schema.prisma; do
+  bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m AnalyticsEvent -d 1 -o docs/analytics.svg
+done
+```
+
+#### Makefile (Build-time generation)
+Regenerate diagrams only if schema is newer than the output file:
+```makefile
+# Usage: make docs/User.svg
+docs/%.svg: prisma/schema.prisma
+	bunx @matserdam/prisma-neighborhood -s $< -m $* -d 2 -o $@
+```
+
+#### package.json (using nodemon)
+Development script to watch and rebuild:
+```json
+{
+  "scripts": {
+    "watch:erd": "nodemon --watch prisma/schema.prisma --exec 'bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -o docs/user.svg'"
+  }
+}
+```
+
 ## Understanding Depth
 
 The --depth flag controls how many relationship levels to traverse from the starting model.
@@ -150,6 +184,26 @@ Use depth=1 for focused impact analysis.
 Use depth=2-3 for domain understanding.
 Use depth=4+ for exploring complex interconnections.
 
+## Understanding the Output
+
+The generated diagram visualizes your Prisma schema using standard Crow's Foot notation:
+
+### Entities
+- **Header**: The model name (e.g., `User`, `Order`)
+- **Body**: List of fields with their types and constraints
+  - **PK**: Primary Key
+  - **UK**: Unique Key
+  - **FK**: Foreign Key (implicit in Prisma relations)
+
+### Relationships
+Lines connect related models with markers indicating cardinality:
+- `||--||`: One-to-One
+- `||--o|`: One-to-Zero-or-One
+- `||--o{`: One-to-Many
+- `}o--o{`: Many-to-Many (implicit or explicit)
+
+The **starting model** (specified by `-m`) is central to the graph structure, with all other models radiating out based on the traversal depth.
+
 ## Troubleshooting
 
 ### Export uses mermaid-cli
@@ -161,6 +215,10 @@ Model names are case-sensitive. Check exact spelling in your schema.prisma:
 model User { ... }    # Use: -m User
 model OrderItem { }   # Use: -m OrderItem (not orderitem)
 
+### Schema file not found
+Ensure the path to your schema is correct relative to your current directory:
+`bunx ... -s ./prisma/schema.prisma` vs `bunx ... -s ./schema.prisma`
+
 ### Diagram shows too many models
 Reduce depth to limit scope:
 
@@ -170,5 +228,15 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 1
 # Still too much? Your model may be a "God object" with too many relations
 
 ### Output is empty or missing models
-Ensure the model has relations defined in your schema. Scalar-only models produce minimal output.
+- Ensure the model has relations defined in your schema. Scalar-only models produce minimal output.
+- Check if your schema has syntax errors (run `npx prisma validate`).
+
+### Permission denied on output
+If writing to a directory (e.g., `docs/`), ensure the directory exists and you have write permissions:
+`mkdir -p docs && bunx ...`
+
+### Large diagram performance
+For very deep traversals (depth 5+) on large schemas:
+- Prefer SVG output (scales better than PNG)
+- Increase Node memory if needed: `NODE_OPTIONS="--max-old-space-size=4096" bunx ...`
 
