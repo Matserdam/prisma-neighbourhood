@@ -57,5 +57,5 @@ describe("VectorRenderer export (e2e)", () => {
 
 		const pngStats = await stat(pngPath);
 		expect(pngStats.size).toBeGreaterThan(1000);
-	});
+	}, 30000); // Increased timeout for mermaid-cli which can be slow on first run
 });
