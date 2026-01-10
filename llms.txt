@@ -278,3 +278,289 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 1
 ### Permission denied on output
 If writing to a directory (e.g., `docs/`), ensure the directory exists and you have write permissions:
 `mkdir -p docs && bunx ...`
+
+## Shell Script Automation
+
+Keep ERD diagrams automatically synchronized with your Prisma schema using shell scripts and file watchers.
+
+### Basic Regeneration Script
+
+Create a reusable script to regenerate diagrams:
+
+```bash
+#!/bin/bash
+# regenerate-erd.sh - Regenerate ERD diagram for a specific model
+
+SCHEMA_PATH="${1:-./prisma/schema.prisma}"
+MODEL_NAME="${2:-User}"
+DEPTH="${3:-1}"
+OUTPUT_DIR="${4:-./docs}"
+
+mkdir -p "$OUTPUT_DIR"
+bunx @matserdam/prisma-neighborhood \
+  -s "$SCHEMA_PATH" \
+  -m "$MODEL_NAME" \
+  -d "$DEPTH" \
+  -o "$OUTPUT_DIR/${MODEL_NAME,,}-erd.svg"
+
+echo "Generated $OUTPUT_DIR/${MODEL_NAME,,}-erd.svg"
+```
+
+Usage: `./regenerate-erd.sh ./prisma/schema.prisma AnalyticsEvent 1 ./docs`
+
+### Watch for Schema Changes with fswatch (macOS)
+
+Automatically regenerate SVG when your Prisma schema changes using fswatch:
+
+```bash
+#!/bin/bash
+# watch-schema.sh - Auto-regenerate AnalyticsEvent ERD on schema changes
+
+SCHEMA_PATH="./prisma/schema.prisma"
+MODEL="AnalyticsEvent"
+DEPTH=1
+OUTPUT="./docs/analytics-event-erd.svg"
+
+regenerate() {
+  echo "[$(date '+%H:%M:%S')] Schema changed, regenerating $MODEL ERD..."
+  bunx @matserdam/prisma-neighborhood -s "$SCHEMA_PATH" -m "$MODEL" -d "$DEPTH" -o "$OUTPUT"
+  echo "[$(date '+%H:%M:%S')] Done: $OUTPUT"
+}
+
+# Generate initial diagram
+regenerate
+
+# Watch for changes (macOS - install with: brew install fswatch)
+echo "Watching $SCHEMA_PATH for changes..."
+fswatch -o "$SCHEMA_PATH" | while read -r; do
+  regenerate
+done
+```
+
+### Watch for Schema Changes with inotifywait (Linux)
+
+For Linux systems, use inotifywait from the inotify-tools package:
+
+```bash
+#!/bin/bash
+# watch-schema-linux.sh - Auto-regenerate AnalyticsEvent ERD on schema changes
+
+SCHEMA_PATH="./prisma/schema.prisma"
+MODEL="AnalyticsEvent"
+DEPTH=1
+OUTPUT="./docs/analytics-event-erd.svg"
+
+regenerate() {
+  echo "[$(date '+%H:%M:%S')] Schema changed, regenerating $MODEL ERD..."
+  bunx @matserdam/prisma-neighborhood -s "$SCHEMA_PATH" -m "$MODEL" -d "$DEPTH" -o "$OUTPUT"
+  echo "[$(date '+%H:%M:%S')] Done: $OUTPUT"
+}
+
+# Generate initial diagram
+regenerate
+
+# Watch for changes (Linux - install with: apt install inotify-tools)
+echo "Watching $SCHEMA_PATH for changes..."
+while inotifywait -e modify,close_write "$SCHEMA_PATH" 2>/dev/null; do
+  regenerate
+done
+```
+
+### Watch for Schema Changes with entr (Cross-platform)
+
+Using entr for a simpler cross-platform solution:
+
+```bash
+#!/bin/bash
+# watch-schema-entr.sh - Auto-regenerate AnalyticsEvent ERD on schema changes
+
+SCHEMA_PATH="./prisma/schema.prisma"
+MODEL="AnalyticsEvent"
+DEPTH=1
+OUTPUT="./docs/analytics-event-erd.svg"
+
+# Install entr: brew install entr (macOS) or apt install entr (Linux)
+echo "Watching $SCHEMA_PATH for changes... (Ctrl+C to stop)"
+echo "$SCHEMA_PATH" | entr -c bunx @matserdam/prisma-neighborhood \
+  -s "$SCHEMA_PATH" \
+  -m "$MODEL" \
+  -d "$DEPTH" \
+  -o "$OUTPUT"
+```
+
+### Watch Multiple Models
+
+Regenerate diagrams for multiple models when schema changes:
+
+```bash
+#!/bin/bash
+# watch-all-models.sh - Regenerate multiple ERDs on schema changes
+
+SCHEMA_PATH="./prisma/schema.prisma"
+OUTPUT_DIR="./docs"
+MODELS=("AnalyticsEvent" "User" "Order" "Product")
+
+regenerate_all() {
+  mkdir -p "$OUTPUT_DIR"
+  for model in "${MODELS[@]}"; do
+    echo "Regenerating $model ERD (depth 1)..."
+    bunx @matserdam/prisma-neighborhood \
+      -s "$SCHEMA_PATH" \
+      -m "$model" \
+      -d 1 \
+      -o "$OUTPUT_DIR/${model,,}-erd.svg"
+  done
+  echo "All diagrams regenerated at $(date '+%H:%M:%S')"
+}
+
+# Initial generation
+regenerate_all
+
+# Watch for changes
+echo "Watching $SCHEMA_PATH for changes..."
+fswatch -o "$SCHEMA_PATH" | while read -r; do
+  regenerate_all
+done
+```
+
+### Polling-based Watcher (Universal, No Dependencies)
+
+If you can't install fswatch or inotifywait, use a simple polling approach:
+
+```bash
+#!/bin/bash
+# watch-schema-poll.sh - Universal polling-based watcher
+
+SCHEMA_PATH="./prisma/schema.prisma"
+MODEL="AnalyticsEvent"
+DEPTH=1
+OUTPUT="./docs/analytics-event-erd.svg"
+POLL_INTERVAL=2
+
+regenerate() {
+  bunx @matserdam/prisma-neighborhood -s "$SCHEMA_PATH" -m "$MODEL" -d "$DEPTH" -o "$OUTPUT"
+  echo "[$(date '+%H:%M:%S')] Regenerated: $OUTPUT"
+}
+
+# Get initial modification time
+get_mtime() {
+  stat -c %Y "$SCHEMA_PATH" 2>/dev/null || stat -f %m "$SCHEMA_PATH" 2>/dev/null
+}
+
+LAST_MTIME=$(get_mtime)
+regenerate  # Initial generation
+
+echo "Watching $SCHEMA_PATH (polling every ${POLL_INTERVAL}s)..."
+while true; do
+  sleep "$POLL_INTERVAL"
+  CURRENT_MTIME=$(get_mtime)
+  if [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
+    LAST_MTIME="$CURRENT_MTIME"
+    regenerate
+  fi
+done
+```
+
+### npm/package.json Integration
+
+Add watch scripts to your package.json for easy access:
+
+```json
+{
+  "scripts": {
+    "erd:generate": "bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m AnalyticsEvent -d 1 -o ./docs/analytics-event-erd.svg",
+    "erd:watch": "fswatch -o ./prisma/schema.prisma | xargs -n1 -I{} npm run erd:generate",
+    "erd:watch:linux": "while inotifywait -e modify ./prisma/schema.prisma; do npm run erd:generate; done"
+  }
+}
+```
+
+Then run: `npm run erd:watch`
+
+### Git Pre-commit Hook
+
+Automatically regenerate and commit ERDs before each commit:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit - Regenerate ERDs before commit
+
+SCHEMA_PATH="./prisma/schema.prisma"
+
+# Check if schema was modified
+if git diff --cached --name-only | grep -q "schema.prisma"; then
+  echo "Prisma schema changed, regenerating ERDs..."
+  
+  bunx @matserdam/prisma-neighborhood -s "$SCHEMA_PATH" -m AnalyticsEvent -d 1 -o ./docs/analytics-event-erd.svg
+  
+  # Stage regenerated files
+  git add ./docs/*.svg
+  
+  echo "ERDs regenerated and staged."
+fi
+```
+
+Make it executable: `chmod +x .git/hooks/pre-commit`
+
+### CI/CD Integration: GitHub Actions
+
+Regenerate ERDs automatically in CI when schema changes:
+
+```yaml
+# .github/workflows/update-erd.yml
+name: Update ERD Diagrams
+
+on:
+  push:
+    paths:
+      - 'prisma/schema.prisma'
+
+jobs:
+  update-erd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+      
+      - name: Regenerate AnalyticsEvent ERD
+        run: |
+          mkdir -p docs
+          bunx @matserdam/prisma-neighborhood \
+            -s ./prisma/schema.prisma \
+            -m AnalyticsEvent \
+            -d 1 \
+            -o ./docs/analytics-event-erd.svg
+      
+      - name: Commit updated diagrams
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add docs/*.svg
+          git diff --staged --quiet || git commit -m "chore: update ERD diagrams"
+          git push
+```
+
+### Makefile Integration
+
+Add ERD generation to your Makefile:
+
+```makefile
+SCHEMA := ./prisma/schema.prisma
+DOCS_DIR := ./docs
+
+.PHONY: erd erd-watch
+
+# Generate AnalyticsEvent ERD (depth 1)
+erd:
+	@mkdir -p $(DOCS_DIR)
+	bunx @matserdam/prisma-neighborhood -s $(SCHEMA) -m AnalyticsEvent -d 1 -o $(DOCS_DIR)/analytics-event-erd.svg
+	@echo "Generated $(DOCS_DIR)/analytics-event-erd.svg"
+
+# Watch schema and auto-regenerate
+erd-watch:
+	@echo "Watching $(SCHEMA) for changes..."
+	@fswatch -o $(SCHEMA) | xargs -n1 -I{} make erd
+```
+
+Run: `make erd` or `make erd-watch`
