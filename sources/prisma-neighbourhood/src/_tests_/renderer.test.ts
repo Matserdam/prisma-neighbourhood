@@ -378,7 +378,7 @@ describe("Renderer System", () => {
 
 			// Assert - Views have [view] prefix, models don't
 			expect(viewOutput).toContain('"[view] UserPostCount"');
-			expect(modelOutput).toMatch(/^  User \{/m);
+			expect(modelOutput).toMatch(/^ {2}User \{/m);
 		});
 	});
 

@@ -108,8 +108,8 @@ function extractViewNames(schemaContent: string): Set<string> {
 	const viewNames = new Set<string>();
 	// Match "view <Name> {" with optional whitespace
 	const viewRegex = /^\s*view\s+(\w+)\s*\{/gm;
-	let match: RegExpExecArray | null;
-	while ((match = viewRegex.exec(schemaContent)) !== null) {
+	const matches = schemaContent.matchAll(viewRegex);
+	for (const match of matches) {
 		viewNames.add(match[1]);
 	}
 	return viewNames;

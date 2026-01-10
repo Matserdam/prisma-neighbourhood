@@ -89,9 +89,7 @@ function renderEnum(enumDef: Enum, lines: string[]): void {
  * @param entities - Traversed entities (models, views, enums) to render
  * @returns Mermaid ERD text
  */
-export function renderMermaidErd(
-	entities: readonly TraversedEntity[],
-): string {
+export function renderMermaidErd(entities: readonly TraversedEntity[]): string {
 	const lines: string[] = ["erDiagram"];
 
 	// Track rendered relationships to avoid duplicates

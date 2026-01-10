@@ -81,12 +81,8 @@ describe("Entity Traverser", () => {
 			expect(entityNames).toContain("Profile");
 
 			// Check depths
-			const userEntity = result.entities.find(
-				(e) => e.entity.name === "User",
-			);
-			const postEntity = result.entities.find(
-				(e) => e.entity.name === "Post",
-			);
+			const userEntity = result.entities.find((e) => e.entity.name === "User");
+			const postEntity = result.entities.find((e) => e.entity.name === "Post");
 			const profileEntity = result.entities.find(
 				(e) => e.entity.name === "Profile",
 			);
@@ -257,9 +253,7 @@ describe("Entity Traverser", () => {
 			expect(entityNames).toContain("User"); // depth 1 (uses Role enum)
 
 			// Check kind is enum for Role
-			const roleEntity = result.entities.find(
-				(e) => e.entity.name === "Role",
-			);
+			const roleEntity = result.entities.find((e) => e.entity.name === "Role");
 			expect(roleEntity?.kind).toBe("enum");
 		});
 
@@ -298,9 +292,7 @@ describe("Entity Traverser", () => {
 			expect(entityNames).toContain("Profile"); // depth 1 (relation)
 
 			// Check Role has kind "enum"
-			const roleEntity = result.entities.find(
-				(e) => e.entity.name === "Role",
-			);
+			const roleEntity = result.entities.find((e) => e.entity.name === "Role");
 			expect(roleEntity?.kind).toBe("enum");
 			expect(roleEntity?.depth).toBe(1);
 		});
@@ -366,9 +358,7 @@ describe("Entity Traverser", () => {
 			expect(enumEntities.length).toBeGreaterThan(0);
 
 			// Post at depth 0
-			const postEntity = result.entities.find(
-				(e) => e.entity.name === "Post",
-			);
+			const postEntity = result.entities.find((e) => e.entity.name === "Post");
 			expect(postEntity?.depth).toBe(0);
 
 			// Status enum at depth 1
