@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    working-directory: sources/prisma-neighbourhood
+    working-directory: sources/prisma-neighborhood
 
 jobs:
   lint:
@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: sources/prisma-neighbourhood/dist/
+          path: sources/prisma-neighborhood/dist/
           retention-days: 1
 
   examples:
@@ -131,7 +131,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
-          path: sources/prisma-neighbourhood/dist/
+          path: sources/prisma-neighborhood/dist/
 
       - name: Make CLI executable
         run: chmod +x ./dist/cli.js
@@ -143,5 +143,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: erd-diagrams
-          path: sources/prisma-neighbourhood/examples/output/
+          path: sources/prisma-neighborhood/examples/output/
           retention-days: 1

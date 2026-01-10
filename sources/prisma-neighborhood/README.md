@@ -104,7 +104,3 @@ Enums are rendered with an `[enum]` prefix, with the enum name as the type for e
 - **From a model**: Traverses relations to other models/views, and enum fields to enums
 - **From a view**: Traverses relations to models/views, and enum fields to enums
 - **From an enum**: Finds all models/views using this enum, then traverses their relations
-
-## No Puppeteer / Chromium
-
-SVG/PNG/PDF export is implemented without headless Chromium, so you no longer need to install OS-level Chromium dependencies.

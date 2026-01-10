@@ -1,0 +1,77 @@
+name: Example Workflow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  generate-example:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2
+
+      - name: Create example schema
+        run: |
+          cat > schema.prisma << 'EOF'
+          datasource db {
+            provider = "postgresql"
+          }
+
+          generator client {
+            provider = "prisma-client"
+          }
+
+          model User {
+            id       Int       @id @default(autoincrement())
+            email    String    @unique
+            name     String?
+            posts    Post[]
+            profile  Profile?
+          }
+
+          model Post {
+            id        Int      @id @default(autoincrement())
+            title     String
+            content   String?
+            published Boolean  @default(false)
+            author    User     @relation(fields: [authorId], references: [id])
+            authorId  Int
+          }
+
+          model Profile {
+            id     Int    @id @default(autoincrement())
+            bio    String
+            user   User   @relation(fields: [userId], references: [id])
+            userId Int    @unique
+          }
+          EOF
+
+      - name: Generate ERD diagram
+        run: bunx @matserdam/prisma-neighborhood@latest -s schema.prisma -m User -d 2 -o user-erd.svg
+
+      - name: Upload ERD artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-erd
+          path: user-erd.svg
+          retention-days: 7
