@@ -1,0 +1,115 @@
+// Analytics application schema
+// Demonstrates views and enums for reporting
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider        = "prisma-client"
+  output          = "./generated/prisma"
+  previewFeatures = ["views"]
+}
+
+// Enums
+enum UserRole {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+enum EventType {
+  PAGE_VIEW
+  CLICK
+  FORM_SUBMIT
+  PURCHASE
+  SIGNUP
+}
+
+enum ReportStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// Models
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String
+  role      UserRole  @default(VIEWER)
+  events    Event[]
+  reports   Report[]
+  createdAt DateTime  @default(now())
+}
+
+model Event {
+  id        Int       @id @default(autoincrement())
+  type      EventType
+  url       String
+  metadata  Json?
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  timestamp DateTime  @default(now())
+
+  @@index([type])
+  @@index([timestamp])
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  status      ReportStatus @default(DRAFT)
+  query       String
+  schedule    String?
+  creator     User         @relation(fields: [creatorId], references: [id])
+  creatorId   Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Audit log - tracks actions with role context (also uses UserRole enum)
+model AuditLog {
+  id        Int       @id @default(autoincrement())
+  action    String
+  actorRole UserRole
+  details   Json?
+  createdAt DateTime  @default(now())
+
+  @@index([actorRole])
+}
+
+// Views - aggregated data for dashboards
+view UserEventSummary {
+  userId      Int    @unique
+  email       String
+  name        String
+  totalEvents Int
+  lastEventAt DateTime?
+}
+
+view EventTypeStats {
+  eventType   String @unique
+  totalCount  Int
+  uniqueUsers Int
+}
+
+view DailyEventMetrics {
+  date        DateTime @unique
+  totalEvents Int
+  uniqueUsers Int
+  pageViews   Int
+  clicks      Int
+  purchases   Int
+}
+
+// View with enum field - demonstrates traversal from view → enum → models
+// At depth 2: View → UserRole enum → User model + AuditLog model
+view ActiveUsersByRole {
+  role       UserRole @unique
+  userCount  Int
+  lastActive DateTime?
+}

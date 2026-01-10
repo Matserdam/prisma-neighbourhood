@@ -1,28 +1,41 @@
 /**
- * @fileoverview Type definitions for model traversal.
- * These types support BFS traversal of model relationships with depth limiting.
+ * @fileoverview Type definitions for entity traversal.
+ * These types support BFS traversal of models, views, and enums with depth limiting.
  */
 
-import type { Model } from "../parser/types";
+import type { Enum, Model, View } from "../parser/types";
 
 /**
- * Represents a model that has been visited during traversal,
- * including its depth level from the starting model.
+ * The kind of entity being traversed.
  */
-export interface TraversedModel {
-	/** The traversed model */
-	readonly model: Model;
+export type EntityKind = "model" | "view" | "enum";
 
-	/** The depth level from the starting model (0 = starting model) */
+/**
+ * Union type for all traversable entities.
+ */
+export type Entity = Model | View | Enum;
+
+/**
+ * Represents an entity that has been visited during traversal,
+ * including its kind and depth level from the starting entity.
+ */
+export interface TraversedEntity {
+	/** The traversed entity (model, view, or enum) */
+	readonly entity: Entity;
+
+	/** The kind of entity */
+	readonly kind: EntityKind;
+
+	/** The depth level from the starting entity (0 = starting entity) */
 	readonly depth: number;
 }
 
 /**
- * Configuration options for model traversal.
+ * Configuration options for entity traversal.
  */
 export interface TraversalOptions {
-	/** The name of the model to start traversal from */
-	readonly startModel: string;
+	/** The name of the entity to start traversal from (model, view, or enum) */
+	readonly startEntity: string;
 
 	/** Maximum depth to traverse (default: 3) */
 	readonly maxDepth?: number;
@@ -32,5 +45,5 @@ export interface TraversalOptions {
  * Result of a traversal operation.
  */
 export type TraversalResult =
-	| { readonly success: true; readonly models: readonly TraversedModel[] }
+	| { readonly success: true; readonly entities: readonly TraversedEntity[] }
 	| { readonly success: false; readonly error: string };

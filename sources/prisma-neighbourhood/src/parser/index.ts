@@ -5,6 +5,7 @@
 
 export { parseSchema } from "./schema-parser";
 export type {
+	Enum,
 	Field,
 	Model,
 	ParsedSchema,
@@ -13,4 +14,5 @@ export type {
 	Relation,
 	RelationType,
 	ScalarType,
+	View,
 } from "./types";

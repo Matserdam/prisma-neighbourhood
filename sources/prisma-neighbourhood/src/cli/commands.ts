@@ -9,7 +9,7 @@ import { Command } from "commander";
 import { parseSchema } from "../parser";
 import { rendererRegistry } from "../renderer";
 import type { ExportFormat } from "../renderer/types";
-import { traverseModels } from "../traversal";
+import { traverseEntities } from "../traversal";
 import { DEFAULT_CLI_OPTIONS } from "./types";
 
 /** Supported output file extensions */
@@ -51,9 +51,12 @@ export function createProgram(): Command {
 	program
 		.name("prisma-neighborhood")
 		.description("Generate Entity-Relationship Diagrams from Prisma schemas")
-		.version("0.1.0")
+		.version("0.3.0")
 		.option("-s, --schema <path>", "Path to the Prisma schema file")
-		.option("-m, --model <name>", "Name of the model to start traversal from")
+		.option(
+			"-m, --model <name>",
+			"Name of the entity (model, view, or enum) to start traversal from",
+		)
 		.option(
 			"-d, --depth <n>",
 			"Traversal depth",
@@ -168,10 +171,10 @@ async function runCommand(options: {
 			process.exit(1);
 		}
 
-		// Step 4: Traverse models
+		// Step 4: Traverse entities
 		const depth = parseInt(options.depth, 10);
-		const traversalResult = traverseModels(parseResult.schema, {
-			startModel: options.model,
+		const traversalResult = traverseEntities(parseResult.schema, {
+			startEntity: options.model,
 			maxDepth: depth,
 		});
 
@@ -181,7 +184,7 @@ async function runCommand(options: {
 		}
 
 		// Step 5: Render the diagram
-		const output = renderer.render(traversalResult.models);
+		const output = renderer.render(traversalResult.entities);
 
 		// Step 6: Output the result
 		if (options.output) {

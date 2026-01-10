@@ -255,5 +255,131 @@ describe("Schema Parser", () => {
 
 			expect(result.success).toBe(false);
 		});
+
+		it("should parse enums correctly", async () => {
+			// Arrange
+			const schemaPath = fixturePath("with-enums-views.prisma");
+
+			// Act
+			const result = await parseSchema({ schemaPath });
+
+			// Assert
+			expect(result.success).toBe(true);
+			if (!result.success) return;
+
+			// Check enums are parsed
+			expect(result.schema.enums.size).toBe(2);
+			expect(result.schema.enums.has("Role")).toBe(true);
+			expect(result.schema.enums.has("Status")).toBe(true);
+
+			// Check Role enum values
+			const roleEnum = result.schema.enums.get("Role");
+			expect(roleEnum).toBeDefined();
+			if (!roleEnum) return;
+
+			expect(roleEnum.name).toBe("Role");
+			expect(roleEnum.values).toEqual(["USER", "ADMIN", "MODERATOR"]);
+
+			// Check Status enum values
+			const statusEnum = result.schema.enums.get("Status");
+			expect(statusEnum).toBeDefined();
+			if (!statusEnum) return;
+
+			expect(statusEnum.name).toBe("Status");
+			expect(statusEnum.values).toEqual(["DRAFT", "PUBLISHED", "ARCHIVED"]);
+		});
+
+		it("should parse views correctly", async () => {
+			// Arrange
+			const schemaPath = fixturePath("with-enums-views.prisma");
+
+			// Act
+			const result = await parseSchema({ schemaPath });
+
+			// Assert
+			expect(result.success).toBe(true);
+			if (!result.success) return;
+
+			// Check views are parsed
+			expect(result.schema.views.size).toBe(2);
+			expect(result.schema.views.has("UserPostCount")).toBe(true);
+			expect(result.schema.views.has("PublishedPostSummary")).toBe(true);
+
+			// Check UserPostCount view fields
+			const userPostCountView = result.schema.views.get("UserPostCount");
+			expect(userPostCountView).toBeDefined();
+			if (!userPostCountView) return;
+
+			expect(userPostCountView.name).toBe("UserPostCount");
+			expect(userPostCountView.fields.length).toBe(4);
+
+			const idField = userPostCountView.fields.find((f) => f.name === "id");
+			expect(idField).toMatchObject({
+				name: "id",
+				type: "Int",
+				isUnique: true,
+			});
+
+			const postCountField = userPostCountView.fields.find(
+				(f) => f.name === "postCount",
+			);
+			expect(postCountField).toMatchObject({
+				name: "postCount",
+				type: "Int",
+			});
+		});
+
+		it("should parse models with enum fields correctly", async () => {
+			// Arrange
+			const schemaPath = fixturePath("with-enums-views.prisma");
+
+			// Act
+			const result = await parseSchema({ schemaPath });
+
+			// Assert
+			expect(result.success).toBe(true);
+			if (!result.success) return;
+
+			// Check User model has role field with Role enum type
+			const userModel = result.schema.models.get("User");
+			expect(userModel).toBeDefined();
+			if (!userModel) return;
+
+			const roleField = userModel.fields.find((f) => f.name === "role");
+			expect(roleField).toMatchObject({
+				name: "role",
+				type: "Role",
+				isRequired: true,
+				isRelation: false,
+			});
+
+			// Check Post model has status field with Status enum type
+			const postModel = result.schema.models.get("Post");
+			expect(postModel).toBeDefined();
+			if (!postModel) return;
+
+			const statusField = postModel.fields.find((f) => f.name === "status");
+			expect(statusField).toMatchObject({
+				name: "status",
+				type: "Status",
+				isRequired: true,
+				isRelation: false,
+			});
+		});
+
+		it("should return empty views and enums for schema without them", async () => {
+			// Arrange
+			const schemaPath = fixturePath("simple.prisma");
+
+			// Act
+			const result = await parseSchema({ schemaPath });
+
+			// Assert
+			expect(result.success).toBe(true);
+			if (!result.success) return;
+
+			expect(result.schema.views.size).toBe(0);
+			expect(result.schema.enums.size).toBe(0);
+		});
 	});
 });

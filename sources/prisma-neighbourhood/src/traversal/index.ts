@@ -1,11 +1,13 @@
 /**
  * @fileoverview Traversal module exports.
- * Provides model traversal functionality and type definitions.
+ * Provides entity traversal functionality and type definitions.
  */
 
-export { traverseModels } from "./model-traverser";
+export { traverseEntities } from "./entity-traverser";
 export type {
+	Entity,
+	EntityKind,
 	TraversalOptions,
 	TraversalResult,
-	TraversedModel,
+	TraversedEntity,
 } from "./types";

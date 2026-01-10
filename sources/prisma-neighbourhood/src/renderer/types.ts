@@ -3,7 +3,7 @@
  * Defines the DiagramRenderer interface and registry types for extensibility.
  */
 
-import type { TraversedModel } from "../traversal/types";
+import type { TraversedEntity } from "../traversal/types";
 
 /**
  * Supported export formats for diagram rendering.
@@ -12,7 +12,7 @@ export type ExportFormat = "png" | "pdf" | "svg";
 
 /**
  * Interface for diagram renderers.
- * Implementations convert traversed models to diagram syntax and optionally
+ * Implementations convert traversed entities to diagram syntax and optionally
  * support exporting to image formats.
  *
  * @example
@@ -20,7 +20,7 @@ export type ExportFormat = "png" | "pdf" | "svg";
  * class MermaidRenderer implements DiagramRenderer {
  *   readonly name = "mermaid";
  *
- *   render(models: TraversedModel[]): string {
+ *   render(entities: TraversedEntity[]): string {
  *     // Generate Mermaid ERD syntax
  *     return "erDiagram\\n...";
  *   }
@@ -45,12 +45,12 @@ export interface DiagramRenderer {
 	readonly description: string;
 
 	/**
-	 * Generate diagram text from traversed models.
+	 * Generate diagram text from traversed entities.
 	 *
-	 * @param models - The traversed models to render
+	 * @param entities - The traversed entities to render
 	 * @returns The diagram syntax as a string
 	 */
-	render(models: readonly TraversedModel[]): string;
+	render(entities: readonly TraversedEntity[]): string;
 
 	/**
 	 * Export the diagram to a file format (SVG/PNG/PDF) if supported.

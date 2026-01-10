@@ -6,12 +6,14 @@
 import { readFile } from "node:fs/promises";
 import { getDMMF } from "@prisma/internals";
 import type {
+	Enum,
 	Field,
 	Model,
 	ParseResult,
 	ParserOptions,
 	Relation,
 	RelationType,
+	View,
 } from "./types";
 
 /**
@@ -80,10 +82,121 @@ function isUniqueField(field: { isUnique: boolean }): boolean {
 }
 
 /**
+ * DMMF field type used for parsing models and views.
+ */
+type DMMFField = {
+	readonly name: string;
+	readonly type: string;
+	readonly isRequired: boolean;
+	readonly isList: boolean;
+	readonly isId: boolean;
+	readonly isUnique: boolean;
+	readonly kind: string;
+	readonly relationName?: string | null;
+	readonly relationFromFields?: readonly string[];
+};
+
+/**
+ * Extracts view names from the raw Prisma schema content.
+ * Since DMMF may not differentiate views from models, we parse the schema
+ * text to find `view` declarations.
+ *
+ * @param schemaContent - Raw Prisma schema file content
+ * @returns Set of view names declared in the schema
+ */
+function extractViewNames(schemaContent: string): Set<string> {
+	const viewNames = new Set<string>();
+	// Match "view <Name> {" with optional whitespace
+	const viewRegex = /^\s*view\s+(\w+)\s*\{/gm;
+	let match: RegExpExecArray | null;
+	while ((match = viewRegex.exec(schemaContent)) !== null) {
+		viewNames.add(match[1]);
+	}
+	return viewNames;
+}
+
+/**
+ * DMMF model/view type used for parsing.
+ */
+type DMMFModelOrView = {
+	readonly name: string;
+	readonly fields: readonly DMMFField[];
+};
+
+/**
+ * Parses fields and relations from a DMMF model or view.
+ *
+ * @param dmmfEntity - The DMMF model or view to parse
+ * @param entityLookup - Map of all models and views for relation resolution
+ * @returns Object containing parsed fields and relations
+ */
+function parseFieldsAndRelations(
+	dmmfEntity: DMMFModelOrView,
+	entityLookup: Map<string, DMMFModelOrView>,
+): { fields: Field[]; relations: Relation[] } {
+	const fields: Field[] = [];
+	const relations: Relation[] = [];
+
+	for (const dmmfField of dmmfEntity.fields) {
+		// Create the field representation
+		const field: Field = {
+			name: dmmfField.name,
+			type: dmmfField.type,
+			isRequired: dmmfField.isRequired,
+			isList: dmmfField.isList,
+			isPrimaryKey: isPrimaryKeyField(dmmfField),
+			isUnique: isUniqueField(dmmfField),
+			isRelation: isRelationField(dmmfField),
+		};
+
+		fields.push(field);
+
+		// If this is a relation field, also create a Relation entry
+		if (isRelationField(dmmfField)) {
+			// Find the related entity to determine relation type
+			const relatedEntity = entityLookup.get(dmmfField.type);
+			const relatedField = relatedEntity?.fields.find(
+				(f) =>
+					f.relationName === dmmfField.relationName &&
+					f.name !== dmmfField.name,
+			);
+
+			// Determine relation type based on both sides
+			const relationType = determineRelationType(
+				{ isList: dmmfField.isList, isRequired: dmmfField.isRequired },
+				relatedField
+					? {
+							isList: relatedField.isList,
+							isRequired: relatedField.isRequired,
+						}
+					: undefined,
+			);
+
+			// Determine if this side owns the relation (has the foreign key)
+			// The owner is the side that has relationFromFields defined
+			const isOwner =
+				dmmfField.relationFromFields !== undefined &&
+				dmmfField.relationFromFields.length > 0;
+
+			const relation: Relation = {
+				relatedModel: dmmfField.type,
+				type: relationType,
+				fieldName: dmmfField.name,
+				isOwner,
+			};
+
+			relations.push(relation);
+		}
+	}
+
+	return { fields, relations };
+}
+
+/**
  * Parses a Prisma schema file and returns a structured representation.
  *
  * Uses @prisma/internals getDMMF to parse the schema file and extract
- * model definitions, fields, and relationships.
+ * model, view, and enum definitions with their fields and relationships.
  *
  * @param options - Parser configuration options
  * @returns A ParseResult containing the parsed schema or an error
@@ -93,6 +206,8 @@ function isUniqueField(field: { isUnique: boolean }): boolean {
  * const result = await parseSchema({ schemaPath: './prisma/schema.prisma' });
  * if (result.success) {
  *   console.log(result.schema.models);
+ *   console.log(result.schema.views);
+ *   console.log(result.schema.enums);
  * }
  * ```
  */
@@ -116,87 +231,62 @@ export async function parseSchema(
 		// Step 2: Parse the schema using Prisma's DMMF generator
 		const dmmf = await getDMMF({ datamodel: schemaContent });
 
-		// Step 3: Build a lookup map of all models for relation resolution
+		// Step 3: Extract view names from raw schema (DMMF may not separate them)
+		const viewNamesFromSchema = extractViewNames(schemaContent);
+
+		// Step 4: Build a lookup map of all models and views for relation resolution
+		// DMMF puts both models and views in the models array, so we use schema parsing
+		// to differentiate them
 		const dmmfModels = dmmf.datamodel.models;
-		const modelMap = new Map<string, (typeof dmmfModels)[number]>();
+		const dmmfEnums = dmmf.datamodel.enums ?? [];
+
+		const entityLookup = new Map<string, DMMFModelOrView>();
 		for (const model of dmmfModels) {
-			modelMap.set(model.name, model);
+			entityLookup.set(model.name, model);
 		}
 
-		// Step 4: Convert DMMF models to our internal representation
+		// Step 5: Separate models and views based on schema parsing
 		const models = new Map<string, Model>();
+		const views = new Map<string, View>();
 
 		for (const dmmfModel of dmmfModels) {
-			// Parse all fields in the model
-			const fields: Field[] = [];
-			const relations: Relation[] = [];
+			const { fields, relations } = parseFieldsAndRelations(
+				dmmfModel,
+				entityLookup,
+			);
 
-			for (const dmmfField of dmmfModel.fields) {
-				// Create the field representation
-				const field: Field = {
-					name: dmmfField.name,
-					type: dmmfField.type,
-					isRequired: dmmfField.isRequired,
-					isList: dmmfField.isList,
-					isPrimaryKey: isPrimaryKeyField(dmmfField),
-					isUnique: isUniqueField(dmmfField),
-					isRelation: isRelationField(dmmfField),
+			// Check if this is actually a view based on schema parsing
+			if (viewNamesFromSchema.has(dmmfModel.name)) {
+				const view: View = {
+					name: dmmfModel.name,
+					fields,
+					relations,
 				};
-
-				fields.push(field);
-
-				// If this is a relation field, also create a Relation entry
-				if (isRelationField(dmmfField)) {
-					// Find the related model to determine relation type
-					const relatedModel = modelMap.get(dmmfField.type);
-					const relatedField = relatedModel?.fields.find(
-						(f) =>
-							f.relationName === dmmfField.relationName &&
-							f.name !== dmmfField.name,
-					);
-
-					// Determine relation type based on both sides
-					const relationType = determineRelationType(
-						{ isList: dmmfField.isList, isRequired: dmmfField.isRequired },
-						relatedField
-							? {
-									isList: relatedField.isList,
-									isRequired: relatedField.isRequired,
-								}
-							: undefined,
-					);
-
-					// Determine if this side owns the relation (has the foreign key)
-					// The owner is the side that has relationFromFields defined
-					const isOwner =
-						dmmfField.relationFromFields !== undefined &&
-						dmmfField.relationFromFields.length > 0;
-
-					const relation: Relation = {
-						relatedModel: dmmfField.type,
-						type: relationType,
-						fieldName: dmmfField.name,
-						isOwner,
-					};
-
-					relations.push(relation);
-				}
+				views.set(view.name, view);
+			} else {
+				const model: Model = {
+					name: dmmfModel.name,
+					fields,
+					relations,
+				};
+				models.set(model.name, model);
 			}
-
-			// Create the model representation
-			const model: Model = {
-				name: dmmfModel.name,
-				fields,
-				relations,
-			};
-
-			models.set(model.name, model);
 		}
 
-		// Step 5: Return the parsed schema
+		// Step 6: Convert DMMF enums to our internal representation
+		const enums = new Map<string, Enum>();
+		for (const dmmfEnum of dmmfEnums) {
+			const enumDef: Enum = {
+				name: dmmfEnum.name,
+				values: dmmfEnum.values.map((v) => v.name),
+			};
+			enums.set(enumDef.name, enumDef);
+		}
+
+		// Step 7: Return the parsed schema
 		return {
 			success: true,
-			schema: { models },
+			schema: { models, views, enums },
 		};
 	} catch (error) {
 		// Handle any parsing errors from getDMMF

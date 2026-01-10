@@ -1,6 +1,6 @@
 # prisma-neighbourhood
 
-Generate focused ERD diagrams from a Prisma schema by starting from one model and traversing relationships up to a configurable depth.
+Generate focused ERD diagrams from a Prisma schema by starting from any entity (model, view, or enum) and traversing relationships up to a configurable depth.
 
 The npm package is **`@matserdam/prisma-neighborhood`** and it exposes two CLI commands:
 
@@ -19,6 +19,12 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
 ```bash
 # Limit to direct relationships only (depth 1)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
+
+# Start from a view (shows view + related enums/models)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserSummary -d 2
+
+# Start from an enum (shows enum + all models/views using it)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserRole -d 2
 
 # Write Mermaid to a file (use .mmd or .md)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.mmd
@@ -50,7 +56,7 @@ prisma-hood -s ./prisma/schema.prisma -m User
 | Option | Alias | Description | Default |
 |--------|-------|-------------|---------|
 | `--schema <path>` | `-s` | Path to the Prisma schema file | required |
-| `--model <name>` | `-m` | Model to start traversal from | required |
+| `--model <name>` | `-m` | Entity to start traversal from (model, view, or enum) | required |
 | `--depth <n>` | `-d` | Relationship levels to traverse | `3` |
 | `--renderer <name>` | `-r` | Renderer to use | `vector` |
 | `--output <file>` | `-o` | Write to a file instead of stdout | stdout |
@@ -68,6 +74,36 @@ The output format is determined by the file extension:
 | `.svg` | SVG |
 | `.png` | PNG image |
 | `.pdf` | PDF |
+
+## Entity types
+
+### Models
+Standard Prisma models are rendered as plain ERD entities.
+
+### Views
+Views (requires `previewFeatures = ["views"]`) are rendered with a `[view]` prefix:
+```
+"[view] UserSummary" {
+  Int id UK
+  String email
+}
+```
+
+### Enums
+Enums are rendered with an `[enum]` prefix, with the enum name as the type for each value:
+```
+"[enum] UserRole" {
+  UserRole ADMIN
+  UserRole USER
+  UserRole GUEST
+}
+```
+
+## Traversal behavior
+
+- **From a model**: Traverses relations to other models/views, and enum fields to enums
+- **From a view**: Traverses relations to models/views, and enum fields to enums
+- **From an enum**: Finds all models/views using this enum, then traverses their relations
 
 ## No Puppeteer / Chromium
 

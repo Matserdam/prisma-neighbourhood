@@ -1,16 +1,16 @@
-import type { TraversedModel } from "../traversal/types";
+import type { TraversedEntity } from "../traversal/types";
 import { renderMermaidErd } from "./mermaid-erd";
 import type { DiagramRenderer, ExportFormat } from "./types";
 import { runMermaidCli } from "./utils/mermaid-cli";
 
 /**
  * Mermaid ERD renderer implementation.
- * Generates Mermaid Entity-Relationship Diagram syntax from traversed models.
+ * Generates Mermaid Entity-Relationship Diagram syntax from traversed entities.
  *
  * @example
  * ```typescript
  * const renderer = new MermaidRenderer();
- * const output = renderer.render(traversedModels);
+ * const output = renderer.render(traversedEntities);
  * console.log(output);
  * // erDiagram
  * //   User {
@@ -29,18 +29,19 @@ export class MermaidRenderer implements DiagramRenderer {
 		"Mermaid ERD syntax (text). Supports export via mermaid-cli.";
 
 	/**
-	 * Generate Mermaid ERD syntax from traversed models.
+	 * Generate Mermaid ERD syntax from traversed entities.
 	 *
 	 * The output includes:
 	 * - Entity definitions with fields and types
 	 * - Primary key (PK) and unique (UK) markers
 	 * - Relationship lines between entities
+	 * - Enum definitions with their values
 	 *
-	 * @param models - The traversed models to render
+	 * @param entities - The traversed entities to render
 	 * @returns The Mermaid ERD syntax as a string
 	 */
-	render(models: readonly TraversedModel[]): string {
-		return renderMermaidErd(models);
+	render(entities: readonly TraversedEntity[]): string {
+		return renderMermaidErd(entities);
 	}
 
 	/**

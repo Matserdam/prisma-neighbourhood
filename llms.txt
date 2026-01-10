@@ -1,6 +1,6 @@
 # prisma-neighbourhood
 
-Generate focused, high-quality ERD diagrams from Prisma schemas. Instead of overwhelming full-schema diagrams, prisma-neighbourhood traverses relationships from any starting model to a configurable depth, showing only the relevant "neighborhood" of connected entities.
+Generate focused, high-quality ERD diagrams from Prisma schemas. Instead of overwhelming full-schema diagrams, prisma-neighbourhood traverses relationships from any starting entity (model, view, or enum) to a configurable depth, showing only the relevant "neighborhood" of connected entities.
 
 Perfect for:
 - **Onboarding**: Show new developers just the domain they need, not 200+ models
@@ -14,7 +14,6 @@ Outputs to SVG (recommended for highest quality), PNG, PDF, or raw Mermaid synta
 
 ### Run without installing (recommended)
 bunx @matserdam/prisma-neighborhood [options]
-bunx @matserdam/prisma-neighborhood [options]
 
 ### Install globally
 npm install -g @matserdam/prisma-neighborhood
@@ -23,6 +22,12 @@ npm install -g @matserdam/prisma-neighborhood
 
 # Visualize the neighborhood around User model
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
+
+# Start from a view (shows view + related enums/models)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserSummary -d 2
+
+# Start from an enum (shows enum + all models/views using it)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserRole -d 2
 
 # Show only direct relationships (depth 1)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -d 1
@@ -38,13 +43,74 @@ bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o docs/er
 | Option | Alias | Description | Default |
 |--------|-------|-------------|---------|
 | --schema <path> | -s | Path to Prisma schema file | required |
-| --model <name> | -m | Model to start traversal from | required |
+| --model <name> | -m | Entity to start traversal from (model, view, or enum) | required |
 | --depth <n> | -d | Number of relationship levels to traverse | 3 |
 | --output <file> | -o | Output file (.mmd, .md, .svg, .png, .pdf) | stdout |
 | --renderer <name> | -r | Diagram renderer to use | vector |
 | --list-renderers | | Show available renderers | |
 | --help | -h | Show help | |
 | --version | -V | Show version | |
+
+## Entity Types
+
+### Models
+Regular Prisma models are displayed as standard ERD entities with field types and constraints (PK, UK).
+
+### Views (requires Prisma views preview feature)
+Views are displayed with a `[view]` prefix in the entity name. Views can have relations and enum fields which are traversed normally.
+
+```prisma
+view UserSummary {
+  id    Int    @unique
+  email String
+  role  UserRole
+}
+```
+
+Renders as:
+```
+"[view] UserSummary" {
+  Int id UK
+  String email
+  UserRole role
+}
+```
+
+### Enums
+Enums are displayed with an `[enum]` prefix. Each enum value is shown with the enum name as its type.
+
+```prisma
+enum UserRole {
+  ADMIN
+  USER
+  GUEST
+}
+```
+
+Renders as:
+```
+"[enum] UserRole" {
+  UserRole ADMIN
+  UserRole USER
+  UserRole GUEST
+}
+```
+
+## Traversal Behavior
+
+### Starting from a Model
+Traverses to related models/views via relations, and to enums via enum-typed fields.
+
+### Starting from a View
+Traverses to related models/views via relations, and to enums via enum-typed fields.
+
+### Starting from an Enum
+Finds all models and views that use this enum type in their fields. At depth 2+, continues traversing their relations.
+
+Example: Starting from `UserRole` enum at depth 2:
+- Depth 0: UserRole (the enum itself)
+- Depth 1: User, AuditLog (models using UserRole)
+- Depth 2: Post, Profile (models related to User)
 
 ## Output Formats
 
@@ -73,9 +139,16 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 2 -o docs/auth-d
 # Order processing domain for new backend developer
 bunx @matserdam/prisma-neighborhood -s schema.prisma -m Order -d 2 -o docs/orders-domain.svg
 
-### Stakeholder communication: Generate diagrams for non-technical audience
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Product -d 2 -o slides/product-model.png
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Customer -d 2 -o slides/customer-model.pdf
+### Enum usage analysis: See all entities using an enum
+# Which models/views use the OrderStatus enum?
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m OrderStatus -d 2 -o docs/order-status-usage.svg
+
+# Which models use the UserRole enum?
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m UserRole -d 2 -o docs/role-usage.svg
+
+### View exploration: Understand view relationships
+# See what a reporting view connects to
+bunx @matserdam/prisma-neighborhood -s schema.prisma -m UserSummaryView -d 2 -o docs/summary-view.svg
 
 ### Impact analysis: See what models are affected by a change
 # Before modifying User, see everything within 2 hops
@@ -109,68 +182,20 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 3 -o services/us
 
 # Compare outputs to identify shared models (potential API boundaries)
 
-### Database migration planning: Understand table dependencies
-# What tables cascade from Product?
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Product -d 3
-
-# Plan migration order based on relationship graph
-bunx @matserdam/prisma-neighborhood -s schema.prisma -m Inventory -d 2 -o migration-scope.svg
-
 ### Documentation: Keep ERDs in sync with actual schema
 # Regenerate focused diagrams from current schema
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -o docs/user-erd.svg
 bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -o docs/order-erd.svg
 
-# Generate Mermaid for embedding in README
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Post -o README-diagram.mmd
-
-### CI/CD: Automated documentation generation
-# In GitHub Actions workflow
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -d 3 -o docs/generated/user-erd.svg
-bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m Order -d 3 -o docs/generated/order-erd.svg
-
-### Automation: Auto-regenerate on schema changes
-
-#### macOS (using fswatch)
-Watch for changes and regenerate diagram automatically:
-```bash
-fswatch -o prisma/schema.prisma | xargs -n1 -I{} bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m AnalyticsEvent -d 1 -o docs/analytics.svg
-```
-
-#### Linux (using inotifywait)
-Watch for file modification events:
-```bash
-while inotifywait -e modify prisma/schema.prisma; do
-  bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m AnalyticsEvent -d 1 -o docs/analytics.svg
-done
-```
-
-#### Makefile (Build-time generation)
-Regenerate diagrams only if schema is newer than the output file:
-```makefile
-# Usage: make docs/User.svg
-docs/%.svg: prisma/schema.prisma
-	bunx @matserdam/prisma-neighborhood -s $< -m $* -d 2 -o $@
-```
-
-#### package.json (using nodemon)
-Development script to watch and rebuild:
-```json
-{
-  "scripts": {
-    "watch:erd": "nodemon --watch prisma/schema.prisma --exec 'bunx @matserdam/prisma-neighborhood -s prisma/schema.prisma -m User -o docs/user.svg'"
-  }
-}
-```
-
 ## Understanding Depth
 
-The --depth flag controls how many relationship levels to traverse from the starting model.
+The --depth flag controls how many relationship levels to traverse from the starting entity.
 
 | Depth | What it shows |
 |-------|---------------|
-| 1 | Start model + directly related models only |
-| 2 | Above + models related to those (2 hops) |
+| 0 | Start entity only |
+| 1 | Start entity + directly related entities |
+| 2 | Above + entities related to those (2 hops) |
 | 3 | Default. Good balance for most schemas |
 | 4-5 | Deep exploration, may get large |
 
@@ -179,6 +204,11 @@ Example: User -> Post -> Comment -> Author
 depth=1 shows: User, Post
 depth=2 shows: User, Post, Comment
 depth=3 shows: User, Post, Comment, Author
+
+Example: UserRole enum -> User model -> Post model
+
+depth=1 shows: UserRole, User (uses the enum)
+depth=2 shows: UserRole, User, Post (related to User)
 
 Use depth=1 for focused impact analysis.
 Use depth=2-3 for domain understanding.
@@ -189,35 +219,49 @@ Use depth=4+ for exploring complex interconnections.
 The generated diagram visualizes your Prisma schema using standard Crow's Foot notation:
 
 ### Entities
-- **Header**: The model name (e.g., `User`, `Order`)
-- **Body**: List of fields with their types and constraints
-  - **PK**: Primary Key
-  - **UK**: Unique Key
-  - **FK**: Foreign Key (implicit in Prisma relations)
+- **Models**: Plain entity name (e.g., `User`, `Order`)
+- **Views**: Prefixed with `[view]` (e.g., `"[view] UserSummary"`)
+- **Enums**: Prefixed with `[enum]` (e.g., `"[enum] UserRole"`)
+
+### Fields
+- **PK**: Primary Key
+- **UK**: Unique Key
+- **FK**: Foreign Key (implicit in Prisma relations)
+- Enum values show the enum name as their type
 
 ### Relationships
-Lines connect related models with markers indicating cardinality:
+Lines connect related entities with markers indicating cardinality:
 - `||--||`: One-to-One
 - `||--o|`: One-to-Zero-or-One
 - `||--o{`: One-to-Many
 - `}o--o{`: Many-to-Many (implicit or explicit)
-
-The **starting model** (specified by `-m`) is central to the graph structure, with all other models radiating out based on the traversal depth.
+- `}o--||`: Enum usage (model/view uses enum)
 
 ## Troubleshooting
 
 ### Export uses mermaid-cli
 SVG/PNG/PDF export uses @mermaid-js/mermaid-cli which handles Puppeteer/Chromium automatically. No manual browser setup required.
 
-### Model not found error
-Model names are case-sensitive. Check exact spelling in your schema.prisma:
+### Entity not found error
+Entity names are case-sensitive. Check exact spelling in your schema.prisma:
 
 model User { ... }    # Use: -m User
-model OrderItem { }   # Use: -m OrderItem (not orderitem)
+enum UserRole { }     # Use: -m UserRole
+view UserSummary { }  # Use: -m UserSummary
 
 ### Schema file not found
 Ensure the path to your schema is correct relative to your current directory:
 `bunx ... -s ./prisma/schema.prisma` vs `bunx ... -s ./schema.prisma`
+
+### Views not recognized
+Ensure you have the views preview feature enabled in your schema:
+
+```prisma
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["views"]
+}
+```
 
 ### Diagram shows too many models
 Reduce depth to limit scope:
@@ -228,15 +272,9 @@ bunx @matserdam/prisma-neighborhood -s schema.prisma -m User -d 1
 # Still too much? Your model may be a "God object" with too many relations
 
 ### Output is empty or missing models
-- Ensure the model has relations defined in your schema. Scalar-only models produce minimal output.
+- Ensure the entity has relations or enum fields defined. Scalar-only models produce minimal output.
 - Check if your schema has syntax errors (run `npx prisma validate`).
 
 ### Permission denied on output
 If writing to a directory (e.g., `docs/`), ensure the directory exists and you have write permissions:
 `mkdir -p docs && bunx ...`
-
-### Large diagram performance
-For very deep traversals (depth 5+) on large schemas:
-- Prefer SVG output (scales better than PNG)
-- Increase Node memory if needed: `NODE_OPTIONS="--max-old-space-size=4096" bunx ...`
-

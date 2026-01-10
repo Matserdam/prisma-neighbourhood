@@ -9,7 +9,7 @@
 import { writeFile } from "node:fs/promises";
 import PDFDocument from "pdfkit";
 import sharp from "sharp";
-import type { TraversedModel } from "../traversal/types";
+import type { TraversedEntity } from "../traversal/types";
 import { renderMermaidErd } from "./mermaid-erd";
 import type { DiagramRenderer, ExportFormat } from "./types";
 import { runMermaidCli } from "./utils/mermaid-cli";
@@ -25,8 +25,8 @@ export class VectorRenderer implements DiagramRenderer {
 	readonly description =
 		"Vector-first Mermaid ERD renderer (default). Exports SVG/PNG/PDF using mermaid-cli with sharp for high-DPI output.";
 
-	render(models: readonly TraversedModel[]): string {
-		return renderMermaidErd(models);
+	render(entities: readonly TraversedEntity[]): string {
+		return renderMermaidErd(entities);
 	}
 
 	async export(

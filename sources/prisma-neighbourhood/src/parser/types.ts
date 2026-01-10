@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for parsed Prisma schema models.
+ * @fileoverview Type definitions for parsed Prisma schema models, views, and enums.
  * These types provide a clean internal representation independent of Prisma internals.
  */
 
@@ -83,11 +83,44 @@ export interface Model {
 }
 
 /**
- * Represents the complete parsed schema containing all models.
+ * Represents a parsed Prisma view with its fields and relations.
+ * Views are structurally similar to models but represent database views.
+ * Requires the `views` preview feature to be enabled in the Prisma schema.
+ */
+export interface View {
+	/** The view name */
+	readonly name: string;
+
+	/** All fields in the view */
+	readonly fields: readonly Field[];
+
+	/** Relations to other models/views */
+	readonly relations: readonly Relation[];
+}
+
+/**
+ * Represents a Prisma enum with its possible values.
+ */
+export interface Enum {
+	/** The enum name */
+	readonly name: string;
+
+	/** The possible values of the enum */
+	readonly values: readonly string[];
+}
+
+/**
+ * Represents the complete parsed schema containing models, views, and enums.
  */
 export interface ParsedSchema {
 	/** All models in the schema, keyed by model name */
 	readonly models: ReadonlyMap<string, Model>;
+
+	/** All views in the schema, keyed by view name */
+	readonly views: ReadonlyMap<string, View>;
+
+	/** All enums in the schema, keyed by enum name */
+	readonly enums: ReadonlyMap<string, Enum>;
 }
 
 /**

@@ -1,6 +1,6 @@
 # prisma-neighbourhood
 
-Generate focused ERD diagrams from Prisma schemas by traversing relationships from any model to a configurable depth.
+Generate focused ERD diagrams from Prisma schemas by traversing relationships from any entity (model, view, or enum) to a configurable depth.
 
 [![CI](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/ci.yml/badge.svg)](https://github.com/Matserdam/prisma-neighbourhood/actions/workflows/ci.yml)
 
@@ -8,13 +8,19 @@ Generate focused ERD diagrams from Prisma schemas by traversing relationships fr
 
 ## Why?
 
-Large Prisma schemas with `>10` models produce overwhelming ERDs. `prisma-neighbourhood` lets you visualize just the "neighborhood" around a specific model — perfect for onboarding, impact analysis, and architecture documentation.
+Large Prisma schemas with `>10` models produce overwhelming ERDs. `prisma-neighbourhood` lets you visualize just the "neighborhood" around a specific entity — perfect for onboarding, impact analysis, and architecture documentation.
 
 ## Quick Start
 
 ```bash
 # Visualize relationships around User model
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User
+
+# Start from a view (shows view + related entities)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserSummary -d 2
+
+# Start from an enum (shows enum + all models/views using it)
+bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m UserRole -d 2
 
 # Export as SVG (recommended for very large diagrams)
 bunx @matserdam/prisma-neighborhood -s ./prisma/schema.prisma -m User -o erd.svg
@@ -41,7 +47,7 @@ npm install -g @matserdam/prisma-neighborhood
 | Option | Alias | Description | Default |
 |--------|-------|-------------|---------|
 | `--schema <path>` | `-s` | Path to Prisma schema file | required |
-| `--model <name>` | `-m` | Model to start traversal from | required |
+| `--model <name>` | `-m` | Entity to start from (model, view, or enum) | required |
 | `--depth <n>` | `-d` | Relationship levels to traverse | 3 |
 | `--output <file>` | `-o` | Output file (.mmd, .md, .svg, .png, .pdf) | stdout |
 | `--renderer <name>` | `-r` | Diagram renderer | vector |
@@ -55,6 +61,17 @@ npm install -g @matserdam/prisma-neighborhood
 | `.png` | PNG image | README, Confluence, presentations |
 | `.pdf` | PDF document | Print, formal documentation |
 
+## Entity Types
+
+### Models
+Standard ERD entities with fields and relationships.
+
+### Views
+Displayed with `[view]` prefix. Requires Prisma's views preview feature.
+
+### Enums  
+Displayed with `[enum]` prefix. Starting from an enum shows all models/views using it.
+
 ## Example Output
 
 ```mermaid
@@ -63,19 +80,19 @@ erDiagram
     Int id PK
     String email UK
     String name
+    UserRole role
   }
-  Post {
-    Int id PK
-    String title
-    Int authorId
+  "[enum] UserRole" {
+    UserRole ADMIN
+    UserRole USER
   }
-  Profile {
-    Int id PK
-    String bio
-    Int userId UK
+  "[view] UserSummary" {
+    Int id UK
+    String email
+    UserRole role
   }
-  User ||--o{ Post : "posts"
-  User ||--|| Profile : "profile"
+  User }o--|| "[enum] UserRole" : "role"
+  "[view] UserSummary" }o--|| "[enum] UserRole" : "role"
 ```
 
 ## Use Cases
@@ -83,6 +100,10 @@ erDiagram
 **Onboarding** — Show new developers just one domain without the full schema overwhelming them
 
 **Impact Analysis** — See what models are affected within N hops before making changes
+
+**Enum Usage** — Discover all models and views that use a specific enum
+
+**View Exploration** — Understand what entities a reporting view connects to
 
 **Domain-Driven Design** — Visualize bounded contexts around aggregate roots
 
@@ -93,4 +114,3 @@ erDiagram
 ## License
 
 MIT
-
