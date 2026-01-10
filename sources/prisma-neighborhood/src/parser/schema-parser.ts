@@ -137,6 +137,21 @@ function parseFieldsAndRelations(
 	const fields: Field[] = [];
 	const relations: Relation[] = [];
 
+	// First pass: collect all foreign key field names from relation definitions
+	const foreignKeyFieldNames = new Set<string>();
+	for (const dmmfField of dmmfEntity.fields) {
+		if (
+			isRelationField(dmmfField) &&
+			dmmfField.relationFromFields &&
+			dmmfField.relationFromFields.length > 0
+		) {
+			for (const fkFieldName of dmmfField.relationFromFields) {
+				foreignKeyFieldNames.add(fkFieldName);
+			}
+		}
+	}
+
+	// Second pass: create field and relation entries
 	for (const dmmfField of dmmfEntity.fields) {
 		// Create the field representation
 		const field: Field = {
@@ -147,6 +162,7 @@ function parseFieldsAndRelations(
 			isPrimaryKey: isPrimaryKeyField(dmmfField),
 			isUnique: isUniqueField(dmmfField),
 			isRelation: isRelationField(dmmfField),
+			isForeignKey: foreignKeyFieldNames.has(dmmfField.name),
 		};
 
 		fields.push(field);

@@ -1,0 +1,179 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum BillingStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// --------------------
+// Models (10)
+// --------------------
+
+model User {
+  id    String @id @default(uuid()) @db.Uuid
+  email String @unique
+  name  String?
+
+  memberships Membership[]
+  assigned    Task[]     @relation("Assignee")
+  comments    Comment[]
+}
+
+model Organization {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique
+
+  memberships Membership[]
+  projects    Project[]
+}
+
+model Membership {
+  id   String @id @default(uuid()) @db.Uuid
+  role Role   @default(MEMBER)
+
+  userId String @db.Uuid
+  orgId  String @db.Uuid
+
+  user User         @relation(fields: [userId], references: [id])
+  org  Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model Project {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String
+  orgId String @db.Uuid
+
+  org      Organization @relation(fields: [orgId], references: [id])
+  tasks    Task[]
+  tags     Tag[]
+  invoices Invoice[]
+
+  @@unique([orgId, name])
+}
+
+model Task {
+  id        String     @id @default(uuid()) @db.Uuid
+  title     String
+  status    TaskStatus @default(TODO)
+  createdAt DateTime   @default(now())
+  dueAt     DateTime?
+
+  projectId  String  @db.Uuid
+  project    Project @relation(fields: [projectId], references: [id])
+
+  assigneeId String? @db.Uuid
+  assignee   User?   @relation("Assignee", fields: [assigneeId], references: [id])
+
+  comments Comment[]
+  tags     TaskTag[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+
+  taskId   String @db.Uuid
+  authorId String @db.Uuid
+
+  task   Task @relation(fields: [taskId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+}
+
+model Tag {
+  id        String @id @default(uuid()) @db.Uuid
+  name      String
+  projectId String @db.Uuid
+
+  project   Project @relation(fields: [projectId], references: [id])
+  taskLinks TaskTag[]
+
+  @@unique([projectId, name])
+}
+
+model TaskTag {
+  taskId String @db.Uuid
+  tagId  String @db.Uuid
+
+  task Task @relation(fields: [taskId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([taskId, tagId])
+}
+
+model Invoice {
+  id          String        @id @default(uuid()) @db.Uuid
+  status      BillingStatus @default(DRAFT)
+  amountCents Int
+  issuedAt    DateTime?
+
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id])
+
+  payments Payment[]
+}
+
+model Payment {
+  id          String        @id @default(uuid()) @db.Uuid
+  status      PaymentStatus @default(PENDING)
+  amountCents Int
+  paidAt      DateTime?
+
+  invoiceId String  @db.Uuid
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+// --------------------
+// Views (mapped to existing DB views)
+// --------------------
+
+view ProjectTaskCounts {
+  projectId  String @db.Uuid
+  totalTasks Int
+  doneTasks  Int
+
+  @@map("project_task_counts")
+}
+
+view UserWorkload {
+  userId       String @db.Uuid
+  openTasks    Int
+  overdueTasks Int
+
+  @@map("user_workload")
+}

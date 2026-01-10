@@ -9,15 +9,32 @@ import type { TraversedEntity } from "../traversal/types";
 /**
  * Maps our RelationType to Mermaid ERD relationship notation.
  *
- * Mermaid ERD relationship notation:
- * - ||--|| : one-to-one
- * - ||--o{ : one-to-many (one to zero or more)
- * - }o--o{ : many-to-many
+ * Mermaid ERD relationship notation uses Crow's foot:
+ * - || = exactly one
+ * - o| = zero or one
+ * - }| = one or more
+ * - o{ = zero or more
+ *
+ * Format: LEFT_MARKER--RIGHT_MARKER
+ * The marker near each entity shows its cardinality from the OTHER entity's perspective.
+ *
+ * These symbols are used when the LEFT entity is on the "one" side (does NOT own the FK).
  */
 const RELATION_SYMBOLS = {
 	ONE_TO_ONE: "||--||",
 	ONE_TO_MANY: "||--o{",
 	MANY_TO_MANY: "}o--o{",
+} as const;
+
+/**
+ * Inverted relationship symbols for when the LEFT entity owns the FK.
+ * When an entity owns the FK, it's on the "many" side of one-to-many,
+ * so we need to flip the symbols.
+ */
+const RELATION_SYMBOLS_INVERTED = {
+	ONE_TO_ONE: "||--||", // Symmetric, no change needed
+	ONE_TO_MANY: "}o--||", // Flipped: left is now "many", right is "one"
+	MANY_TO_MANY: "}o--o{", // Symmetric, no change needed
 } as const;
 
 /**
@@ -52,6 +69,9 @@ function renderModelOrView(
 		const modifiers: string[] = [];
 		if (field.isPrimaryKey) {
 			modifiers.push("PK");
+		}
+		if (field.isForeignKey) {
+			modifiers.push("FK");
 		}
 		if (field.isUnique && !field.isPrimaryKey) {
 			modifiers.push("UK");
@@ -153,7 +173,11 @@ export function renderMermaidErd(entities: readonly TraversedEntity[]): string {
 			}
 
 			// Get the Mermaid relationship symbol
-			const symbol = RELATION_SYMBOLS[relation.type];
+			// When this entity owns the FK (isOwner=true), it's on the "many" side of one-to-many,
+			// so we need to use inverted symbols to show correct cardinality
+			const symbol = relation.isOwner
+				? RELATION_SYMBOLS_INVERTED[relation.type]
+				: RELATION_SYMBOLS[relation.type];
 
 			// Render the relationship line with display names
 			lines.push(

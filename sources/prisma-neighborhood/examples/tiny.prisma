@@ -1,0 +1,27 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+//   url      = env("DATABASE_URL")
+}
+
+model User {
+  id    String @id @default(uuid()) @db.Uuid
+  email String @unique
+
+  posts Post[]
+}
+
+model Post {
+  id       String @id @default(uuid()) @db.Uuid
+  title    String
+
+  authorId String @db.Uuid
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
+}

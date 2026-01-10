@@ -66,6 +66,9 @@ export interface Field {
 
 	/** Whether this field is a relation to another model */
 	readonly isRelation: boolean;
+
+	/** Whether this field is a foreign key (references another model's PK) */
+	readonly isForeignKey: boolean;
 }
 
 /**
